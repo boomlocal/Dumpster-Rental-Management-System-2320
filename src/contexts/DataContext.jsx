@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
+// Create the context
 const DataContext = createContext();
 
+// Custom hook for using the context
 export const useData = () => {
   const context = useContext(DataContext);
   if (!context) {
@@ -10,389 +12,281 @@ export const useData = () => {
   return context;
 };
 
+// Provider component
 export const DataProvider = ({ children }) => {
-  const [customers, setCustomers] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [dumpsters, setDumpsters] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [photos, setPhotos] = useState([]);
-  const [systemLogs, setSystemLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadMockData();
-  }, []);
-
-  const loadMockData = () => {
-    try {
-      setCustomers([
-        {
-          id: 1,
-          name: 'ABC Construction',
-          email: 'contact@abc.com',
-          phone: '555-0101',
-          address: '123 Main St, New York, NY 12345',
-          streetAddress: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '12345',
-          jobs: 15
-        },
-        {
-          id: 2,
-          name: 'XYZ Roofing',
-          email: 'info@xyz.com',
-          phone: '555-0102',
-          address: '456 Oak Ave, Los Angeles, CA 90210',
-          streetAddress: '456 Oak Ave',
-          city: 'Los Angeles',
-          state: 'CA',
-          zipCode: '90210',
-          jobs: 8
-        },
-        {
-          id: 3,
-          name: 'Home Renovations LLC',
-          email: 'hello@home.com',
-          phone: '555-0103',
-          address: '789 Pine Rd, Chicago, IL 60601',
-          streetAddress: '789 Pine Rd',
-          city: 'Chicago',
-          state: 'IL',
-          zipCode: '60601',
-          jobs: 22
-        }
-      ]);
-
-      setJobs([
-        {
-          id: 1,
-          customerId: 1,
-          type: 'drop-off',
-          status: 'scheduled',
-          dumpsterSize: '20 yard',
-          scheduledDate: new Date('2024-01-15'),
-          address: '123 Main St, New York, NY 12345',
-          notes: 'Gate code: 1234'
-        },
-        {
-          id: 2,
-          customerId: 2,
-          type: 'pickup',
-          status: 'in-progress',
-          dumpsterSize: '30 yard',
-          scheduledDate: new Date('2024-01-16'),
-          address: '456 Oak Ave, Los Angeles, CA 90210',
-          notes: 'Heavy load - concrete'
-        }
-      ]);
-
-      setDumpsters([
-        {
-          id: 1,
-          size: '20 yard',
-          location: { lat: 40.7128, lng: -74.0060 },
-          status: 'in-use',
-          customerId: 1
-        },
-        {
-          id: 2,
-          size: '30 yard',
-          location: { lat: 40.7589, lng: -73.9851 },
-          status: 'available',
-          customerId: null
-        },
-        {
-          id: 3,
-          size: '20 yard',
-          location: { lat: 40.7505, lng: -73.9934 },
-          status: 'in-use',
-          customerId: 2
-        },
-        {
-          id: 4,
-          size: '40 yard',
-          location: { lat: 40.7282, lng: -73.9942 },
-          status: 'maintenance',
-          customerId: null
-        },
-        {
-          id: 5,
-          size: '10 yard',
-          location: { lat: 40.7614, lng: -73.9776 },
-          status: 'available',
-          customerId: null
-        }
-      ]);
-
-      setDrivers([
-        {
-          id: 1,
-          name: 'Mike Johnson',
-          phone: '555-0201',
-          status: 'active',
-          currentJobs: 3
-        },
-        {
-          id: 2,
-          name: 'Sarah Davis',
-          phone: '555-0202',
-          status: 'active',
-          currentJobs: 2
-        }
-      ]);
-
-      // Mock photos for demonstration
-      setPhotos([
-        {
-          id: 1,
-          jobId: 1,
-          customerId: 1,
-          type: 'delivery',
-          url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&h=600&fit=crop',
-          timestamp: new Date('2024-01-15T10:30:00'),
-          location: {
-            lat: 40.7128,
-            lng: -74.0060,
-            accuracy: 5
-          },
-          notes: 'Dumpster placed near garage as requested',
-          filename: 'delivery_1642248600000.jpg'
-        },
-        {
-          id: 2,
-          jobId: 1,
-          customerId: 1,
-          type: 'delivery',
-          url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=600&fit=crop',
-          timestamp: new Date('2024-01-15T10:35:00'),
-          location: {
-            lat: 40.7128,
-            lng: -74.0060,
-            accuracy: 3
-          },
-          notes: 'Clear access path to street',
-          filename: 'delivery_1642248900000.jpg'
-        }
-      ]);
-
-    } catch (error) {
-      console.error('Error loading mock data:', error);
-    } finally {
-      setLoading(false);
+  // Customers state
+  const [customers, setCustomers] = useState([
+    {
+      id: 1,
+      name: 'ABC Construction',
+      email: 'contact@abc.com',
+      phone: '555-0101',
+      company: 'ABC Construction LLC',
+      address: '123 Main St, New York, NY 10001',
+      createdAt: new Date('2024-01-10')
+    },
+    {
+      id: 2,
+      name: 'XYZ Roofing',
+      email: 'info@xyzroofing.com',
+      phone: '555-0202',
+      company: 'XYZ Roofing Services',
+      address: '456 Oak Ave, Los Angeles, CA 90001',
+      createdAt: new Date('2024-01-15')
+    },
+    {
+      id: 3,
+      name: 'Acme Demolition',
+      email: 'projects@acmedemolition.com',
+      phone: '555-0303',
+      company: 'Acme Demolition Inc.',
+      address: '789 Pine Rd, Chicago, IL 60601',
+      createdAt: new Date('2024-01-20')
     }
-  };
+  ]);
 
-  const addCustomer = (customer) => {
-    try {
-      const newCustomer = {
-        ...customer,
-        id: Date.now()
-      };
-      setCustomers(prev => [...prev, newCustomer]);
-      
-      // Log the action
-      addSystemLog({
-        level: 'info',
-        category: 'customer',
-        action: 'Customer Created',
-        message: `New customer "${customer.name}" created`,
-        userId: 1, // Would be current user ID
-        details: { customerId: newCustomer.id, customerName: customer.name }
-      });
-      
-      return newCustomer;
-    } catch (error) {
-      console.error('Error adding customer:', error);
-      throw error;
+  // Jobs state
+  const [jobs, setJobs] = useState([
+    {
+      id: 1001,
+      customerId: 1,
+      dumpsterSize: '20 Yard',
+      type: 'drop-off',
+      scheduledDate: new Date('2024-01-15'),
+      scheduledTime: 'morning',
+      status: 'completed',
+      address: '123 Main St, New York, NY 10001',
+      coordinates: { lat: 40.7128, lng: -74.0060 },
+      notes: 'Place dumpster in driveway',
+      createdAt: new Date('2024-01-10')
+    },
+    {
+      id: 1002,
+      customerId: 2,
+      dumpsterSize: '30 Yard',
+      type: 'drop-off',
+      scheduledDate: new Date('2024-01-20'),
+      scheduledTime: 'afternoon',
+      status: 'completed',
+      address: '456 Oak Ave, Los Angeles, CA 90001',
+      coordinates: { lat: 34.0522, lng: -118.2437 },
+      notes: 'Customer prefers rear placement',
+      createdAt: new Date('2024-01-15')
+    },
+    {
+      id: 1003,
+      customerId: 3,
+      dumpsterSize: '40 Yard',
+      type: 'drop-off',
+      scheduledDate: new Date('2024-01-25'),
+      scheduledTime: 'morning',
+      status: 'scheduled',
+      address: '789 Pine Rd, Chicago, IL 60601',
+      coordinates: { lat: 41.8781, lng: -87.6298 },
+      notes: 'Concrete disposal, heavy materials',
+      createdAt: new Date('2024-01-20')
     }
+  ]);
+
+  // Dumpsters state
+  const [dumpsters, setDumpsters] = useState([
+    {
+      id: 1,
+      assetNumber: 'D-001',
+      binNumber: 'BH-001',
+      size: '20 yard',
+      status: 'in-use',
+      location: { lat: 40.7128, lng: -74.0060 },
+      customerId: 1,
+      jobId: 1001
+    },
+    {
+      id: 2,
+      assetNumber: 'D-002',
+      binNumber: 'BH-002',
+      size: '30 yard',
+      status: 'in-use',
+      location: { lat: 34.0522, lng: -118.2437 },
+      customerId: 2,
+      jobId: 1002
+    },
+    {
+      id: 3,
+      assetNumber: 'D-003',
+      binNumber: 'BH-003',
+      size: '40 yard',
+      status: 'available',
+      location: { lat: 41.8781, lng: -87.6298 },
+      customerId: null,
+      jobId: null
+    }
+  ]);
+
+  // Drivers state
+  const [drivers, setDrivers] = useState([
+    {
+      id: 1,
+      name: 'John Driver',
+      email: 'john@binhaulerpro.com',
+      phone: '555-1111',
+      status: 'active'
+    },
+    {
+      id: 2,
+      name: 'Sarah Driver',
+      email: 'sarah@binhaulerpro.com',
+      phone: '555-2222',
+      status: 'active'
+    }
+  ]);
+
+  // Photos state
+  const [photos, setPhotos] = useState([
+    {
+      id: 1,
+      jobId: 1001,
+      customerId: 1,
+      type: 'delivery',
+      url: 'https://images.unsplash.com/photo-1610041321420-a0b7d47d396c',
+      timestamp: new Date('2024-01-15T10:30:00'),
+      location: { lat: 40.7128, lng: -74.0060 },
+      notes: 'Dumpster placed in driveway',
+      filename: 'delivery_1001.jpg',
+      uploadedBy: 'John Driver',
+      userRole: 'driver'
+    },
+    {
+      id: 2,
+      jobId: 1002,
+      customerId: 2,
+      type: 'delivery',
+      url: 'https://images.unsplash.com/photo-1526951521990-620dc14c214b',
+      timestamp: new Date('2024-01-20T14:45:00'),
+      location: { lat: 34.0522, lng: -118.2437 },
+      notes: 'Dumpster placed in back yard',
+      filename: 'delivery_1002.jpg',
+      uploadedBy: 'Sarah Driver',
+      userRole: 'driver'
+    }
+  ]);
+
+  // Customer operations
+  const addCustomer = (customerData) => {
+    const newCustomer = {
+      ...customerData,
+      id: Date.now(),
+      createdAt: new Date()
+    };
+    setCustomers(prev => [...prev, newCustomer]);
+    return newCustomer;
   };
 
   const updateCustomer = (id, updates) => {
-    try {
-      setCustomers(prev =>
-        prev.map(customer =>
-          customer.id === id ? { ...customer, ...updates } : customer
-        )
-      );
-      
-      // Log the action
-      addSystemLog({
-        level: 'info',
-        category: 'customer',
-        action: 'Customer Updated',
-        message: `Customer information updated for ID ${id}`,
-        userId: 1,
-        details: { customerId: id, updates }
-      });
-    } catch (error) {
-      console.error('Error updating customer:', error);
-      throw error;
-    }
+    setCustomers(prev => prev.map(customer => 
+      customer.id === id ? { ...customer, ...updates } : customer
+    ));
   };
 
-  const addJob = (job) => {
-    try {
-      const newJob = {
-        ...job,
-        id: Date.now()
-      };
-      setJobs(prev => [...prev, newJob]);
-      
-      // Log the action
-      addSystemLog({
-        level: 'info',
-        category: 'job_site',
-        action: 'Job Created',
-        message: `New job created for customer ID ${job.customerId}`,
-        userId: 1,
-        details: { jobId: newJob.id, customerId: job.customerId, type: job.type }
-      });
-      
-      return newJob;
-    } catch (error) {
-      console.error('Error adding job:', error);
-      throw error;
-    }
+  const deleteCustomer = (id) => {
+    setCustomers(prev => prev.filter(customer => customer.id !== id));
+  };
+
+  // Job operations
+  const addJob = (jobData) => {
+    const newJob = {
+      ...jobData,
+      id: Date.now(),
+      createdAt: new Date()
+    };
+    setJobs(prev => [...prev, newJob]);
+    return newJob;
   };
 
   const updateJob = (id, updates) => {
-    try {
-      setJobs(prev =>
-        prev.map(job =>
-          job.id === id ? { ...job, ...updates } : job
-        )
-      );
-      
-      // Log the action
-      addSystemLog({
-        level: updates.status === 'completed' ? 'success' : 'info',
-        category: 'job_site',
-        action: updates.status === 'completed' ? 'Job Completed' : 'Job Updated',
-        message: `Job #${id} ${updates.status === 'completed' ? 'completed' : 'updated'}`,
-        userId: 1,
-        details: { jobId: id, updates }
-      });
-    } catch (error) {
-      console.error('Error updating job:', error);
-      throw error;
-    }
+    setJobs(prev => prev.map(job => 
+      job.id === id ? { ...job, ...updates } : job
+    ));
   };
 
-  const addPhoto = async (photoData) => {
-    try {
-      const newPhoto = {
-        ...photoData,
-        id: Date.now(),
-        timestamp: new Date()
-      };
-      setPhotos(prev => [...prev, newPhoto]);
-      
-      // Log the action
-      addSystemLog({
-        level: 'info',
-        category: 'job_site',
-        action: 'Photo Captured',
-        message: `${photoData.type} photo captured for job ${photoData.jobId}`,
-        userId: 3, // Driver ID
-        details: { 
-          photoId: newPhoto.id, 
-          jobId: photoData.jobId, 
-          type: photoData.type,
-          hasGPS: !!photoData.location
-        }
-      });
-      
-      return newPhoto;
-    } catch (error) {
-      console.error('Error adding photo:', error);
-      throw error;
-    }
+  const deleteJob = (id) => {
+    setJobs(prev => prev.filter(job => job.id !== id));
   };
 
-  const updatePhotoNotes = async (photoId, notes) => {
-    try {
-      setPhotos(prev =>
-        prev.map(photo =>
-          photo.id === photoId ? { ...photo, notes } : photo
-        )
-      );
-      
-      // Log the action
-      addSystemLog({
-        level: 'info',
-        category: 'other',
-        action: 'Photo Notes Updated',
-        message: `Photo notes updated for photo ID ${photoId}`,
-        userId: 1,
-        details: { photoId, notesLength: notes.length }
-      });
-    } catch (error) {
-      console.error('Error updating photo notes:', error);
-      throw error;
-    }
-  };
-
-  const addSystemLog = (logData) => {
-    const newLog = {
-      id: Date.now(),
-      timestamp: new Date(),
-      userName: getUserName(logData.userId),
-      userRole: getUserRole(logData.userId),
-      ipAddress: '192.168.1.100', // Mock IP
-      userAgent: navigator.userAgent,
-      ...logData
+  // Dumpster operations
+  const addDumpster = (dumpsterData) => {
+    const newDumpster = {
+      ...dumpsterData,
+      id: Date.now()
     };
-    
-    setSystemLogs(prev => [newLog, ...prev].slice(0, 1000)); // Keep last 1000 logs
+    setDumpsters(prev => [...prev, newDumpster]);
+    return newDumpster;
   };
 
-  const getUserName = (userId) => {
-    const userNames = {
-      1: 'John Admin',
-      2: 'Jane Office',
-      3: 'Mike Driver',
-      4: 'Sarah Customer'
+  const updateDumpster = (id, updates) => {
+    setDumpsters(prev => prev.map(dumpster => 
+      dumpster.id === id ? { ...dumpster, ...updates } : dumpster
+    ));
+  };
+
+  const deleteDumpster = (id) => {
+    setDumpsters(prev => prev.filter(dumpster => dumpster.id !== id));
+  };
+
+  // Photo operations
+  const addPhoto = (photoData) => {
+    const newPhoto = {
+      ...photoData,
+      id: photoData.id || Date.now()
     };
-    return userNames[userId] || 'System';
+    setPhotos(prev => [...prev, newPhoto]);
+    return newPhoto;
   };
 
-  const getUserRole = (userId) => {
-    const userRoles = {
-      1: 'admin',
-      2: 'office_staff',
-      3: 'driver',
-      4: 'customer'
-    };
-    return userRoles[userId] || 'system';
+  const updatePhotoNotes = (id, notes) => {
+    setPhotos(prev => prev.map(photo => 
+      photo.id === id ? { ...photo, notes } : photo
+    ));
   };
 
-  const getPhotosByCustomer = (customerId) => {
-    return photos.filter(photo => photo.customerId === customerId);
+  const deletePhoto = (id) => {
+    setPhotos(prev => prev.filter(photo => photo.id !== id));
   };
 
-  const getPhotosByJob = (jobId) => {
-    return photos.filter(photo => photo.jobId === jobId);
-  };
-
+  // Context value
   const value = {
+    // Data
     customers,
     jobs,
     dumpsters,
     drivers,
     photos,
-    systemLogs,
-    loading,
+    
+    // Customer operations
     addCustomer,
     updateCustomer,
+    deleteCustomer,
+    
+    // Job operations
     addJob,
     updateJob,
+    deleteJob,
+    
+    // Dumpster operations
+    addDumpster,
+    updateDumpster,
+    deleteDumpster,
+    
+    // Photo operations
     addPhoto,
     updatePhotoNotes,
-    addSystemLog,
-    getPhotosByCustomer,
-    getPhotosByJob
+    deletePhoto
   };
 
-  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+  return (
+    <DataContext.Provider value={value}>
+      {children}
+    </DataContext.Provider>
+  );
 };
+
+export default DataContext;

@@ -3,25 +3,25 @@ import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 
-const { FiEdit, FiTrash2, FiMail, FiPhone, FiUser, FiUserCheck } = FiIcons;
+const { FiEdit, FiTrash2, FiMail, FiPhone, FiUser, FiUserCheck, FiShield } = FiIcons;
 
-const UserList = ({ users, onEditUser, onDeleteUser }) => {
+const UserList = ({ users, onEditUser, onDeleteUser, currentUserId }) => {
   const getRoleColor = (role) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'office_staff': return 'bg-blue-100 text-blue-800';
-      case 'driver': return 'bg-green-100 text-green-800';
-      case 'customer': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'admin': return 'bg-red-100 text-red-800 border-red-200';
+      case 'office_staff': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'driver': return 'bg-green-100 text-green-800 border-green-200';
+      case 'customer': return 'bg-purple-100 text-purple-800 border-purple-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'suspended': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-100 text-green-800 border-green-200';
+      case 'inactive': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'suspended': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -35,11 +35,22 @@ const UserList = ({ users, onEditUser, onDeleteUser }) => {
     }
   };
 
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case 'admin': return FiShield;
+      case 'office_staff': return FiUserCheck;
+      case 'driver': return FiUser;
+      case 'customer': return FiUser;
+      default: return FiUser;
+    }
+  };
+
   if (users.length === 0) {
     return (
       <div className="text-center py-12">
         <SafeIcon icon={FiUser} className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-500 text-lg">No users found</p>
+        <p className="text-gray-400 text-sm">Try adjusting your search filters</p>
       </div>
     );
   }
@@ -56,34 +67,41 @@ const UserList = ({ users, onEditUser, onDeleteUser }) => {
         >
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center space-x-4 mb-2">
-                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-primary-600 font-medium">
-                    {user.name.charAt(0)}
-                  </span>
+              <div className="flex items-center space-x-4 mb-3">
+                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                  <SafeIcon 
+                    icon={getRoleIcon(user.role)} 
+                    className="w-6 h-6 text-primary-600" 
+                  />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {user.name}
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user.role)}`}>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {user.name}
+                      {user.id === currentUserId && (
+                        <span className="ml-2 text-sm text-primary-600 font-normal">(You)</span>
+                      )}
+                    </h3>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getRoleColor(user.role)}`}>
                       {getRoleDisplayName(user.role)}
                     </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(user.status)}`}>
-                      {user.status}
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(user.status)}`}>
+                      {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                     </span>
                   </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-6 text-sm text-gray-600">
-                <div className="flex items-center space-x-1">
-                  <SafeIcon icon={FiMail} className="w-4 h-4" />
-                  <span>{user.email}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <SafeIcon icon={FiPhone} className="w-4 h-4" />
-                  <span>{user.phone}</span>
+                  <div className="flex items-center space-x-6 text-sm text-gray-600">
+                    <div className="flex items-center space-x-1">
+                      <SafeIcon icon={FiMail} className="w-4 h-4" />
+                      <span>{user.email}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <SafeIcon icon={FiPhone} className="w-4 h-4" />
+                      <span>{user.phone}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Created: {user.createdAt?.toLocaleDateString()}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -91,15 +109,19 @@ const UserList = ({ users, onEditUser, onDeleteUser }) => {
               <button
                 onClick={() => onEditUser(user)}
                 className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                title="Edit User"
               >
                 <SafeIcon icon={FiEdit} className="w-5 h-5" />
               </button>
-              <button
-                onClick={() => onDeleteUser(user.id)}
-                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <SafeIcon icon={FiTrash2} className="w-5 h-5" />
-              </button>
+              {user.id !== currentUserId && (
+                <button
+                  onClick={() => onDeleteUser(user.id)}
+                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete User"
+                >
+                  <SafeIcon icon={FiTrash2} className="w-5 h-5" />
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

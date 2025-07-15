@@ -1,13 +1,25 @@
+```jsx
 import React from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 
-const { FiCalendar, FiMapPin, FiUser, FiCamera } = FiIcons;
+const {
+  FiCalendar,
+  FiMapPin,
+  FiUser,
+  FiCamera,
+  FiTruck,
+  FiRefreshCw,
+  FiFilter
+} = FiIcons;
 
-const PhotoFilters = ({ filters, setFilters, customers }) => {
+const PhotoFilters = ({ filters, setFilters, uniqueValues, customers, jobs }) => {
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
   const clearFilters = () => {
@@ -17,10 +29,15 @@ const PhotoFilters = ({ filters, setFilters, customers }) => {
       endDate: '',
       type: 'all',
       customerId: 'all',
+      jobId: 'all',
+      state: 'all',
       city: '',
-      street: '',
+      dumpsterSize: 'all',
       hasGPS: 'all',
-      hasNotes: 'all'
+      hasNotes: 'all',
+      uploadedBy: 'all',
+      userRole: 'all',
+      sortBy: 'newest'
     });
   };
 
@@ -79,23 +96,6 @@ const PhotoFilters = ({ filters, setFilters, customers }) => {
           </>
         )}
 
-        {/* Photo Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <SafeIcon icon={FiCamera} className="w-4 h-4 inline mr-1" />
-            Photo Type
-          </label>
-          <select
-            value={filters.type}
-            onChange={(e) => handleFilterChange('type', e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
-            <option value="all">All Types</option>
-            <option value="delivery">Delivery</option>
-            <option value="pickup">Pickup</option>
-          </select>
-        </div>
-
         {/* Customer */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -108,7 +108,7 @@ const PhotoFilters = ({ filters, setFilters, customers }) => {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option value="all">All Customers</option>
-            {customers?.map(customer => (
+            {customers.map(customer => (
               <option key={customer.id} value={customer.id}>
                 {customer.name}
               </option>
@@ -116,38 +116,98 @@ const PhotoFilters = ({ filters, setFilters, customers }) => {
           </select>
         </div>
 
-        {/* City */}
+        {/* Job */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <SafeIcon icon={FiTruck} className="w-4 h-4 inline mr-1" />
+            Job
+          </label>
+          <select
+            value={filters.jobId}
+            onChange={(e) => handleFilterChange('jobId', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="all">All Jobs</option>
+            {jobs.map(job => (
+              <option key={job.id} value={job.id}>
+                Job #{job.id} - {job.dumpsterSize}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* State */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <SafeIcon icon={FiMapPin} className="w-4 h-4 inline mr-1" />
+            State
+          </label>
+          <select
+            value={filters.state}
+            onChange={(e) => handleFilterChange('state', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="all">All States</option>
+            {uniqueValues.states.map(state => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* City */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             City
           </label>
           <input
             type="text"
             value={filters.city}
             onChange={(e) => handleFilterChange('city', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             placeholder="Enter city name"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
 
-        {/* Street */}
+        {/* Dumpster Size */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Street/Address
+            <SafeIcon icon={FiTruck} className="w-4 h-4 inline mr-1" />
+            Dumpster Size
           </label>
-          <input
-            type="text"
-            value={filters.street}
-            onChange={(e) => handleFilterChange('street', e.target.value)}
-            placeholder="Enter street name"
+          <select
+            value={filters.dumpsterSize}
+            onChange={(e) => handleFilterChange('dumpsterSize', e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
+          >
+            <option value="all">All Sizes</option>
+            {uniqueValues.dumpsterSizes.map(size => (
+              <option key={size} value={size}>{size}</option>
+            ))}
+          </select>
         </div>
 
-        {/* GPS Filter */}
+        {/* Photo Type */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
+            <SafeIcon icon={FiCamera} className="w-4 h-4 inline mr-1" />
+            Photo Type
+          </label>
+          <select
+            value={filters.type}
+            onChange={(e) => handleFilterChange('type', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="all">All Types</option>
+            {uniqueValues.photoTypes.map(type => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Has GPS */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <SafeIcon icon={FiMapPin} className="w-4 h-4 inline mr-1" />
             GPS Tagged
           </label>
           <select
@@ -161,10 +221,10 @@ const PhotoFilters = ({ filters, setFilters, customers }) => {
           </select>
         </div>
 
-        {/* Notes Filter */}
+        {/* Has Notes */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Has Notes
+            Notes
           </label>
           <select
             value={filters.hasNotes}
@@ -176,15 +236,52 @@ const PhotoFilters = ({ filters, setFilters, customers }) => {
             <option value="false">Without Notes</option>
           </select>
         </div>
+
+        {/* User Role */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <SafeIcon icon={FiUser} className="w-4 h-4 inline mr-1" />
+            Uploaded By Role
+          </label>
+          <select
+            value={filters.userRole}
+            onChange={(e) => handleFilterChange('userRole', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="all">All Roles</option>
+            {uniqueValues.userRoles.map(role => (
+              <option key={role} value={role}>
+                {role.charAt(0).toUpperCase() + role.slice(1)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Sort By */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <SafeIcon icon={FiRefreshCw} className="w-4 h-4 inline mr-1" />
+            Sort By
+          </label>
+          <select
+            value={filters.sortBy}
+            onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+        </div>
       </div>
 
       {/* Clear Filters */}
       <div className="flex justify-end">
         <button
           onClick={clearFilters}
-          className="text-sm text-gray-600 hover:text-gray-800 underline"
+          className="text-sm text-gray-600 hover:text-gray-800 underline flex items-center space-x-1"
         >
-          Clear All Filters
+          <SafeIcon icon={FiFilter} className="w-4 h-4" />
+          <span>Clear All Filters</span>
         </button>
       </div>
     </motion.div>
@@ -192,3 +289,4 @@ const PhotoFilters = ({ filters, setFilters, customers }) => {
 };
 
 export default PhotoFilters;
+```

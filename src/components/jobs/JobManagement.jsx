@@ -1,3 +1,4 @@
+```jsx
 import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { motion } from 'framer-motion';
@@ -5,23 +6,45 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import JobForm from './JobForm';
 import JobList from './JobList';
+import toast from 'react-hot-toast';
 
 const { FiPlus, FiSearch, FiFilter } = FiIcons;
 
 const JobManagement = () => {
-  const { jobs, customers } = useData();
+  const { jobs, addJob, updateJob } = useData();
   const [showJobForm, setShowJobForm] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   const filteredJobs = jobs.filter(job => {
-    const customer = customers.find(c => c.id === job.customerId);
-    const matchesSearch = customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.address.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = job.address.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleAddJob = (jobData) => {
+    try {
+      addJob(jobData);
+      setShowJobForm(false);
+      toast.success('Job created successfully');
+    } catch (error) {
+      console.error('Error adding job:', error);
+      toast.error('Failed to create job');
+    }
+  };
+
+  const handleUpdateJob = (id, updates) => {
+    try {
+      updateJob(id, updates);
+      setShowJobForm(false);
+      setSelectedJob(null);
+      toast.success('Job updated successfully');
+    } catch (error) {
+      console.error('Error updating job:', error);
+      toast.error('Failed to update job');
+    }
+  };
 
   const handleEditJob = (job) => {
     setSelectedJob(job);
@@ -60,7 +83,6 @@ const JobManagement = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
-          
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <SafeIcon icon={FiFilter} className="w-5 h-5 text-gray-400" />
@@ -79,13 +101,17 @@ const JobManagement = () => {
           </div>
         </div>
 
-        <JobList jobs={filteredJobs} onEditJob={handleEditJob} />
+        <JobList
+          jobs={filteredJobs}
+          onEditJob={handleEditJob}
+        />
       </div>
 
       {showJobForm && (
         <JobForm
           job={selectedJob}
           onClose={handleCloseForm}
+          onSave={selectedJob ? handleUpdateJob : handleAddJob}
         />
       )}
     </div>
@@ -93,3 +119,4 @@ const JobManagement = () => {
 };
 
 export default JobManagement;
+```

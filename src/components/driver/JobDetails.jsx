@@ -23,7 +23,7 @@ const JobDetails = ({ job }) => {
 
   const handleStatusUpdate = (newStatus) => {
     updateJob(job.id, { status: newStatus });
-
+    
     // Send notification
     if (customer) {
       sendNotification(
@@ -32,7 +32,7 @@ const JobDetails = ({ job }) => {
         customer.phone
       );
     }
-
+    
     toast.success(`Job marked as ${newStatus}`);
   };
 
@@ -51,9 +51,9 @@ const JobDetails = ({ job }) => {
       weight: weight || null,
       completionNotes: notes || null
     };
-
+    
     updateJob(job.id, updateData);
-
+    
     if (customer) {
       sendNotification(
         'email',
@@ -61,7 +61,7 @@ const JobDetails = ({ job }) => {
         customer.email
       );
     }
-
+    
     toast.success('Job completed successfully');
   };
 
@@ -76,14 +76,13 @@ const JobDetails = ({ job }) => {
 
   const handleDropoffComplete = () => {
     setShowDropoffForm(false);
-    // Job is already updated in the BinDropoffForm component
   };
 
   if (showDropoffForm) {
     return (
       <BinDropoffForm 
         job={job} 
-        onComplete={handleDropoffComplete}
+        onComplete={handleDropoffComplete} 
       />
     );
   }
@@ -156,7 +155,6 @@ const JobDetails = ({ job }) => {
             <SafeIcon icon={FiCamera} className="w-5 h-5 text-gray-400" />
             <span className="text-sm font-medium text-gray-600">Delivery Photos</span>
           </button>
-
           <button
             onClick={() => openPhotoCapture('pickup')}
             className="flex items-center justify-center space-x-2 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors"
@@ -184,7 +182,6 @@ const JobDetails = ({ job }) => {
                   placeholder="Enter weight in lbs"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Notes

@@ -2,15 +2,28 @@ import React, { useState } from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import UniversalPhotoUpload from '../photos/UniversalPhotoUpload';
+import toast from 'react-hot-toast';
+import { useData } from '../../contexts/DataContext';
 
 const { FiCamera } = FiIcons;
 
 const CustomerPhotoButton = ({ customer }) => {
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const { addPhoto } = useData();
 
-  const handlePhotoTaken = (photoData) => {
-    // Photo is automatically saved to the system
-    console.log('Photo added for customer:', customer.id, photoData);
+  const handlePhotoTaken = async (photoData) => {
+    try {
+      await addPhoto({
+        ...photoData,
+        customerId: customer.id,
+        type: 'customer',
+        notes: `Customer profile photo - ${customer.name}`
+      });
+      toast.success('Photo added successfully');
+    } catch (error) {
+      console.error('Error saving photo:', error);
+      toast.error('Failed to save photo');
+    }
   };
 
   return (

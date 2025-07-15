@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
@@ -6,6 +6,10 @@ import SafeIcon from '../../common/SafeIcon';
 const { FiEdit, FiTrash2, FiMapPin, FiPhone, FiMail, FiUser, FiClock, FiNavigation, FiEye, FiMap } = FiIcons;
 
 const LocationList = ({ locations, onEditLocation, onDeleteLocation }) => {
+  const [selectedMapLocation, setSelectedMapLocation] = useState(null);
+  const [mapView, setMapView] = useState('default'); // 'default', 'street', 'satellite'
+  const mapRef = useRef(null);
+
   const getTypeColor = (type) => {
     switch (type) {
       case 'office': return 'bg-blue-100 text-blue-800';
@@ -47,37 +51,48 @@ const LocationList = ({ locations, onEditLocation, onDeleteLocation }) => {
     return labels[type] || type;
   };
 
-  const openInMaps = (location) => {
-    if (location.coordinates?.lat && location.coordinates?.lng) {
-      const url = `https://www.google.com/maps?q=${location.coordinates.lat},${location.coordinates.lng}`;
-      window.open(url, '_blank');
-    } else {
-      const address = encodeURIComponent(`${location.address}, ${location.city}, ${location.state} ${location.zipCode}`);
-      const url = `https://www.google.com/maps/search/?api=1&query=${address}`;
-      window.open(url, '_blank');
-    }
-  };
-
-  const openStreetView = (location) => {
-    if (location.coordinates?.lat && location.coordinates?.lng) {
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${location.coordinates.lat},${location.coordinates.lng}`;
-      window.open(url, '_blank');
-    } else {
-      const address = encodeURIComponent(`${location.address}, ${location.city}, ${location.state} ${location.zipCode}`);
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&query=${address}`;
-      window.open(url, '_blank');
-    }
-  };
-
-  const openSatelliteView = (location) => {
-    if (location.coordinates?.lat && location.coordinates?.lng) {
-      const url = `https://www.google.com/maps/@${location.coordinates.lat},${location.coordinates.lng},18z/data=!3m1!1e3`;
-      window.open(url, '_blank');
-    } else {
-      const address = encodeURIComponent(`${location.address}, ${location.city}, ${location.state} ${location.zipCode}`);
-      const url = `https://www.google.com/maps/search/${address}/@?data=!3m1!1e3`;
-      window.open(url, '_blank');
-    }
+  const openMapView = (location, type) => {
+    setSelectedMapLocation(location);
+    setMapView(type);
+    
+    // Initialize map on next render cycle
+    setTimeout(() => {
+      if (mapRef.current && window.google && window.google.maps) {
+        const coordinates = location.coordinates?.lat && location.coordinates?.lng ? 
+          { lat: parseFloat(location.coordinates.lat), lng: parseFloat(location.coordinates.lng) } :
+          { lat: 40.7128, lng: -74.0060 }; // Default to NYC if no coordinates
+        
+        const mapOptions = {
+          center: coordinates,
+          zoom: 17,
+          mapTypeId: type === 'satellite' ? 
+            window.google.maps.MapTypeId.SATELLITE : 
+            window.google.maps.MapTypeId.ROADMAP
+        };
+        
+        const map = new window.google.maps.Map(mapRef.current, mapOptions);
+        
+        // Add marker at location
+        new window.google.maps.Marker({
+          position: coordinates,
+          map: map,
+          title: location.name || 'Location'
+        });
+        
+        // Initialize Street View if requested
+        if (type === 'street') {
+          const panorama = new window.google.maps.StreetViewPanorama(
+            mapRef.current,
+            {
+              position: coordinates,
+              pov: { heading: 34, pitch: 10 },
+              zoom: 1
+            }
+          );
+          map.setStreetView(panorama);
+        }
+      }
+    }, 100);
   };
 
   if (locations.length === 0) {
@@ -85,6 +100,26 @@ const LocationList = ({ locations, onEditLocation, onDeleteLocation }) => {
       <div className="text-center py-12">
         <SafeIcon icon={FiMapPin} className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-500 text-lg">No locations found</p>
+      </div>
+    );
+  }
+
+  if (selectedMapLocation) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">
+            {mapView === 'street' ? 'Street View' : mapView === 'satellite' ? 'Satellite View' : 'Map View'}: 
+            <span className="ml-2 text-primary-600">{selectedMapLocation.name}</span>
+          </h3>
+          <button
+            onClick={() => setSelectedMapLocation(null)}
+            className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200"
+          >
+            Back to Location List
+          </button>
+        </div>
+        <div ref={mapRef} className="w-full h-[500px] rounded-lg border border-gray-200"></div>
       </div>
     );
   }
@@ -112,75 +147,70 @@ const LocationList = ({ locations, onEditLocation, onDeleteLocation }) => {
                   {location.status}
                 </span>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
                 <div className="flex items-center space-x-2">
                   <SafeIcon icon={FiMapPin} className="w-4 h-4" />
                   <span>{location.address}, {location.city}, {location.state} {location.zipCode}</span>
                 </div>
-
+                
                 {location.phone && (
                   <div className="flex items-center space-x-2">
                     <SafeIcon icon={FiPhone} className="w-4 h-4" />
                     <span>{location.phone}</span>
                   </div>
                 )}
-
+                
                 {location.email && (
                   <div className="flex items-center space-x-2">
                     <SafeIcon icon={FiMail} className="w-4 h-4" />
                     <span>{location.email}</span>
                   </div>
                 )}
-
+                
                 {location.manager && (
                   <div className="flex items-center space-x-2">
                     <SafeIcon icon={FiUser} className="w-4 h-4" />
                     <span>Manager: {location.manager}</span>
                   </div>
                 )}
-
+                
                 <div className="flex items-center space-x-2">
                   <SafeIcon icon={FiClock} className="w-4 h-4" />
                   <span>{location.operatingHours}</span>
                 </div>
-
+                
                 {location.coordinates?.lat && location.coordinates?.lng && (
                   <div className="flex items-center space-x-2">
                     <SafeIcon icon={FiNavigation} className="w-4 h-4" />
-                    <button
-                      onClick={() => openInMaps(location)}
-                      className="text-primary-600 hover:text-primary-700 underline"
-                    >
+                    <span>
                       {location.coordinates.lat.toFixed(4)}, {location.coordinates.lng.toFixed(4)}
-                    </button>
+                    </span>
                   </div>
                 )}
               </div>
-
+              
               {/* Map View Options - Available to All Users */}
               <div className="flex items-center space-x-3 mb-3">
                 <span className="text-sm font-medium text-gray-700">Map Views:</span>
                 <button
-                  onClick={() => openInMaps(location)}
+                  onClick={() => openMapView(location, 'default')}
                   className="flex items-center space-x-1 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                   title="Open in Maps"
                 >
                   <SafeIcon icon={FiNavigation} className="w-4 h-4" />
-                  <span>Directions</span>
+                  <span>Map</span>
                 </button>
-                
                 <button
-                  onClick={() => openStreetView(location)}
+                  onClick={() => openMapView(location, 'street')}
                   className="flex items-center space-x-1 px-3 py-1 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                   title="Street View"
                 >
                   <SafeIcon icon={FiEye} className="w-4 h-4" />
                   <span>Street View</span>
                 </button>
-                
                 <button
-                  onClick={() => openSatelliteView(location)}
+                  onClick={() => openMapView(location, 'satellite')}
                   className="flex items-center space-x-1 px-3 py-1 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
                   title="Satellite View"
                 >
@@ -188,14 +218,14 @@ const LocationList = ({ locations, onEditLocation, onDeleteLocation }) => {
                   <span>Satellite</span>
                 </button>
               </div>
-
+              
               {location.notes && (
                 <div className="text-sm text-gray-600">
                   <strong>Notes:</strong> {location.notes}
                 </div>
               )}
             </div>
-
+            
             <div className="flex items-center space-x-2 ml-4">
               <button
                 onClick={() => onEditLocation(location)}
@@ -204,7 +234,6 @@ const LocationList = ({ locations, onEditLocation, onDeleteLocation }) => {
               >
                 <SafeIcon icon={FiEdit} className="w-5 h-5" />
               </button>
-              
               <button
                 onClick={() => onDeleteLocation(location.id)}
                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

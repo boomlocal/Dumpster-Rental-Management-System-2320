@@ -1,90 +1,59 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
-import SafeIcon from '../../common/SafeIcon';
-
-const {
-  FiHome, FiUsers, FiTruck, FiCalendar, FiMapPin, FiBarChart3, FiSettings,
-  FiClipboard, FiSmartphone, FiUserPlus, FiMessageSquare, FiNavigation,
-  FiFileText, FiDollarSign, FiCamera, FiActivity
-} = FiIcons;
+import SafeIcon from '../common/SafeIcon';
 
 const Sidebar = () => {
   const { effectiveUser, effectiveRole } = useAuth();
 
   const getMenuItems = () => {
     const baseItems = [
-      { path: '/dashboard', icon: FiHome, label: 'Dashboard' }
+      { path: '/dashboard', icon: FiIcons.FiHome, label: 'Dashboard' }
     ];
 
     if (effectiveRole === 'admin') {
       baseItems.push(
-        { path: '/users', icon: FiUserPlus, label: 'User Management' },
-        { path: '/customers', icon: FiUsers, label: 'Customers' },
-        { path: '/jobs', icon: FiClipboard, label: 'Jobs' },
-        { path: '/scheduling', icon: FiCalendar, label: 'Scheduling' },
-        { path: '/billing', icon: FiDollarSign, label: 'Billing & Invoices' },
-        { path: '/tracking', icon: FiMapPin, label: 'Tracking' },
-        { path: '/locations', icon: FiMapPin, label: 'Locations' },
-        { path: '/photos', icon: FiCamera, label: 'Photo Library' },
-        { path: '/reports', icon: FiBarChart3, label: 'Reports' },
-        { path: '/notifications', icon: FiMessageSquare, label: 'Notifications' },
-        { path: '/logs', icon: FiActivity, label: 'System Logs' }
+        { path: '/users', icon: FiIcons.FiUserPlus, label: 'User Management' },
+        { path: '/customers', icon: FiIcons.FiUsers, label: 'Customers' },
+        { path: '/jobs', icon: FiIcons.FiClipboard, label: 'Jobs' },
+        { path: '/scheduling', icon: FiIcons.FiCalendar, label: 'Scheduling' },
+        { path: '/billing', icon: FiIcons.FiDollarSign, label: 'Billing & Invoices' },
+        { path: '/tracking', icon: FiIcons.FiMapPin, label: 'Tracking' },
+        { path: '/locations', icon: FiIcons.FiMapPin, label: 'Locations' },
+        { path: '/inventory', icon: FiIcons.FiPackage, label: 'Inventory' },
+        { path: '/photos', icon: FiIcons.FiCamera, label: 'Photo Library' },
+        { path: '/reports', icon: FiIcons.FiBarChart3, label: 'Reports' },
+        { path: '/notifications', icon: FiIcons.FiMessageSquare, label: 'Notifications' },
+        { path: '/logs', icon: FiIcons.FiActivity, label: 'System Logs' }
       );
     }
 
-    if (effectiveRole === 'office_staff') {
-      baseItems.push(
-        { path: '/customers', icon: FiUsers, label: 'Customers' },
-        { path: '/jobs', icon: FiClipboard, label: 'Jobs' },
-        { path: '/scheduling', icon: FiCalendar, label: 'Scheduling' },
-        { path: '/tracking', icon: FiMapPin, label: 'Tracking' },
-        { path: '/photos', icon: FiCamera, label: 'Photo Library' },
-        { path: '/reports', icon: FiBarChart3, label: 'Reports' }
-      );
-    }
-
-    if (effectiveRole === 'driver') {
-      baseItems.push(
-        { path: '/driver', icon: FiSmartphone, label: 'Driver App' },
-        { path: '/tracking', icon: FiMapPin, label: 'Tracking' },
-        { path: '/gps', icon: FiNavigation, label: 'GPS Tracker' }
-      );
-    }
-
-    baseItems.push({ path: '/settings', icon: FiSettings, label: 'Settings' });
+    baseItems.push({ path: '/settings', icon: FiIcons.FiSettings, label: 'Settings' });
 
     return baseItems;
   };
 
-  const getRoleDisplayName = (role) => {
-    switch (role) {
-      case 'admin': return 'Administrator';
-      case 'office_staff': return 'Office Staff';
-      case 'driver': return 'Driver';
-      case 'customer': return 'Customer';
-      default: return role;
-    }
-  };
+  const menuItems = getMenuItems();
 
   return (
-    <div className="bg-white w-64 shadow-lg flex flex-col">
-      <div className="p-6 border-b">
+    <div className="bg-white w-64 shadow-lg flex flex-col h-full">
+      {/* Header */}
+      <div className="p-6 border-b flex-shrink-0">
         <div className="flex items-center space-x-3">
           <div className="bg-primary-100 p-2 rounded-lg">
-            <SafeIcon icon={FiTruck} className="w-6 h-6 text-primary-600" />
+            <SafeIcon icon={FiIcons.FiTruck} className="w-6 h-6 text-primary-600" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">BinHaulerPro</h1>
-            <p className="text-sm text-gray-500">{getRoleDisplayName(effectiveRole)}</p>
+            <p className="text-sm text-gray-500">{effectiveRole}</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
-        {getMenuItems().map((item) => (
+      {/* Navigation Menu */}
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {menuItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -96,22 +65,23 @@ const Sidebar = () => {
               }`
             }
           >
-            <SafeIcon icon={item.icon} className="w-5 h-5" />
+            <SafeIcon icon={item.icon} className="w-5 h-5 flex-shrink-0" />
             <span className="font-medium">{item.label}</span>
           </NavLink>
         ))}
       </nav>
 
-      <div className="p-4 border-t">
+      {/* User Info */}
+      <div className="p-4 border-t flex-shrink-0">
         <div className="flex items-center space-x-3 px-4 py-3">
-          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
             <span className="text-primary-600 font-medium text-sm">
               {effectiveUser?.name?.charAt(0)}
             </span>
           </div>
-          <div>
-            <p className="font-medium text-gray-900">{effectiveUser?.name}</p>
-            <p className="text-sm text-gray-500">{effectiveUser?.email}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-gray-900 truncate">{effectiveUser?.name}</p>
+            <p className="text-sm text-gray-500 truncate">{effectiveUser?.email}</p>
           </div>
         </div>
       </div>

@@ -1,187 +1,115 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useData } from '../../contexts/DataContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
+import { useData } from '../../contexts/DataContext';
 import toast from 'react-hot-toast';
 
-const { FiX, FiSave, FiCalendar, FiMapPin, FiTruck, FiHome, FiEye, FiMap } = FiIcons;
+const { FiX, FiSave, FiUser, FiMapPin, FiCalendar, FiPackage, FiFileText, FiPlus } = FiIcons;
 
-const JobForm = ({ job, onClose }) => {
-  const { customers, addJob, updateJob } = useData();
-  const { sendEmail, sendSMS } = useNotifications();
+const JobForm = ({ job, onClose, onSave }) => {
+  const { customers } = useData();
+  const today = new Date().toISOString().split('T')[0];
+
   const [formData, setFormData] = useState({
     customerId: job?.customerId || '',
+    dumpsterSize: job?.dumpsterSize || '20 Yard',
     type: job?.type || 'drop-off',
+    scheduledDate: job?.scheduledDate ? job.scheduledDate.toISOString().split('T')[0] : today,
+    scheduledTime: job?.scheduledTime || 'morning',
     status: job?.status || 'scheduled',
-    dumpsterSize: job?.dumpsterSize || '20 yard',
-    scheduledDate: job?.scheduledDate?.toISOString().split('T')[0] || '',
-    scheduledTime: job?.scheduledTime || '09:00',
-    notes: job?.notes || '',
-    // Full address fields
-    streetAddress: job?.streetAddress || '',
-    apartment: job?.apartment || '',
-    city: job?.city || '',
-    state: job?.state || '',
-    zipCode: job?.zipCode || '',
-    country: job?.country || 'United States',
-    formattedAddress: job?.formattedAddress || '',
-    coordinates: job?.coordinates || { lat: '', lng: '' }
+    address: job?.address || '',
+    notes: job?.notes || ''
   });
 
-  const [autocomplete, setAutocomplete] = useState(null);
-  const addressInputRef = useRef(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [errors, setErrors] = useState({});
 
-  const states = [
-    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware',
-    'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
-    'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
-    'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
-    'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania',
-    'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
-    'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-  ];
-
+  // If job has a customer, set the selected customer
   useEffect(() => {
-    initializeAutocomplete();
-  }, []);
+    if (formData.customerId) {
+      const customer = customers.find(c => c.id === parseInt(formData.customerId));
+      setSelectedCustomer(customer);
+    }
+  }, [formData.customerId, customers]);
 
-  const initializeAutocomplete = () => {
-    if (!window.google || !window.google.maps || !window.google.maps.places) {
-      console.log('Google Maps Places API not loaded');
-      return;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+
+    // Clear errors when field is updated
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: ''
+      });
     }
 
-    try {
-      const autocompleteInstance = new window.google.maps.places.Autocomplete(
-        addressInputRef.current,
-        {
-          types: ['address'],
-          componentRestrictions: { country: ['us', 'ca'] },
-          fields: ['formatted_address', 'geometry', 'address_components', 'place_id']
-        }
-      );
-
-      autocompleteInstance.addListener('place_changed', () => {
-        const place = autocompleteInstance.getPlace();
-        if (place.geometry && place.geometry.location) {
-          handlePlaceSelect(place);
-        }
-      });
-
-      setAutocomplete(autocompleteInstance);
-    } catch (error) {
-      console.error('Error initializing autocomplete:', error);
+    // Update address when customer changes
+    if (name === 'customerId' && value) {
+      const customer = customers.find(c => c.id === parseInt(value));
+      if (customer) {
+        setSelectedCustomer(customer);
+        setFormData(prev => ({
+          ...prev,
+          address: customer.address || ''
+        }));
+      }
     }
   };
 
-  const handlePlaceSelect = (place) => {
-    const addressComponents = place.address_components || [];
-    let streetNumber = '';
-    let route = '';
-    let city = '';
-    let state = '';
-    let zipCode = '';
-
-    addressComponents.forEach(component => {
-      const types = component.types;
-      if (types.includes('street_number')) {
-        streetNumber = component.long_name;
-      } else if (types.includes('route')) {
-        route = component.long_name;
-      } else if (types.includes('locality')) {
-        city = component.long_name;
-      } else if (types.includes('administrative_area_level_1')) {
-        state = component.short_name;
-      } else if (types.includes('postal_code')) {
-        zipCode = component.long_name;
-      }
-    });
-
-    const fullAddress = streetNumber && route ? `${streetNumber} ${route}` : place.formatted_address;
-
-    setFormData(prev => ({
-      ...prev,
-      streetAddress: fullAddress,
-      city: city,
-      state: state,
-      zipCode: zipCode,
-      formattedAddress: place.formatted_address,
-      coordinates: {
-        lat: place.geometry.location.lat().toFixed(6),
-        lng: place.geometry.location.lng().toFixed(6)
-      }
-    }));
-
-    toast.success('Address details auto-filled from Google Maps');
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.customerId) {
+      newErrors.customerId = 'Please select a customer';
+    }
+    
+    if (!formData.dumpsterSize) {
+      newErrors.dumpsterSize = 'Please select a dumpster size';
+    }
+    
+    if (!formData.scheduledDate) {
+      newErrors.scheduledDate = 'Please select a date';
+    }
+    
+    if (!formData.address) {
+      newErrors.address = 'Address is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Combine address fields into a single address string for compatibility
-    const fullAddress = `${formData.streetAddress}${formData.apartment ? ', ' + formData.apartment : ''}, ${formData.city}, ${formData.state} ${formData.zipCode}`;
-
+    
+    if (!validateForm()) {
+      toast.error('Please fix the errors before submitting');
+      return;
+    }
+    
     const jobData = {
       ...formData,
-      scheduledDate: new Date(formData.scheduledDate),
-      scheduledTime: formData.scheduledTime,
-      address: fullAddress
+      customerId: parseInt(formData.customerId),
+      scheduledDate: new Date(formData.scheduledDate)
     };
-
-    if (job) {
-      updateJob(job.id, jobData);
-      toast.success('Job updated successfully');
-    } else {
-      addJob(jobData);
-      toast.success('Job created successfully');
-
-      // Send notifications
-      const customer = customers.find(c => c.id === parseInt(formData.customerId));
-      if (customer) {
-        sendEmail(
-          customer.email,
-          'Job Scheduled',
-          `Your ${formData.dumpsterSize} dumpster has been scheduled for ${formData.scheduledDate}`
-        );
-        sendSMS(
-          customer.phone,
-          `HaulerPro: Your ${formData.dumpsterSize} dumpster is scheduled for ${formData.scheduledDate} at ${formData.scheduledTime}`
-        );
+    
+    try {
+      if (job) {
+        onSave(job.id, jobData);
+      } else {
+        onSave(jobData);
       }
-    }
-
-    onClose();
-  };
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const openStreetView = () => {
-    if (formData.coordinates.lat && formData.coordinates.lng) {
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${formData.coordinates.lat},${formData.coordinates.lng}`;
-      window.open(url, '_blank');
-    } else if (formData.formattedAddress || formData.streetAddress) {
-      const address = encodeURIComponent(formData.formattedAddress || `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`);
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&query=${address}`;
-      window.open(url, '_blank');
-    } else {
-      toast.error('No address available for Street View');
-    }
-  };
-
-  const openSatelliteView = () => {
-    if (formData.coordinates.lat && formData.coordinates.lng) {
-      const url = `https://www.google.com/maps/@${formData.coordinates.lat},${formData.coordinates.lng},18z/data=!3m1!1e3`;
-      window.open(url, '_blank');
-    } else if (formData.formattedAddress || formData.streetAddress) {
-      const address = encodeURIComponent(formData.formattedAddress || `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`);
-      const url = `https://www.google.com/maps/search/${address}/@?data=!3m1!1e3`;
-      window.open(url, '_blank');
-    } else {
-      toast.error('No address available for Satellite View');
+      
+      onClose();
+      toast.success(`Job ${job ? 'updated' : 'created'} successfully`);
+    } catch (error) {
+      console.error('Error saving job:', error);
+      toast.error('Failed to save job');
     }
   };
 
@@ -198,7 +126,7 @@ const JobForm = ({ job, onClose }) => {
       >
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">
-            {job ? 'Edit Job' : 'New Job'}
+            {job ? 'Edit Job' : 'Schedule New Job'}
           </h2>
           <button
             onClick={onClose}
@@ -209,259 +137,177 @@ const JobForm = ({ job, onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Job Details */}
+          {/* Customer Selection */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Job Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer *
-                </label>
-                <select
-                  name="customerId"
-                  value={formData.customerId}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Customer</option>
-                  {customers.map(customer => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Customer *
+            </label>
+            <div className="relative">
+              <SafeIcon icon={FiUser} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <select
+                name="customerId"
+                value={formData.customerId}
+                onChange={handleChange}
+                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  errors.customerId ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Select Customer</option>
+                {customers.map(customer => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name} {customer.company ? `(${customer.company})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {errors.customerId && <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Type *
-                </label>
-                <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="drop-off">Drop-off</option>
-                  <option value="pickup">Pickup</option>
-                  <option value="exchange">Exchange</option>
-                  <option value="live-load">Live Load</option>
-                </select>
-              </div>
+          {/* Job Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dumpster Size *
+              </label>
+              <select
+                name="dumpsterSize"
+                value={formData.dumpsterSize}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="6 Yard">6 Yard</option>
+                <option value="10 Yard">10 Yard</option>
+                <option value="14 Yard">14 Yard</option>
+                <option value="20 Yard">20 Yard</option>
+                <option value="30 Yard">30 Yard</option>
+                <option value="40 Yard">40 Yard</option>
+              </select>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dumpster Size *
-                </label>
-                <select
-                  name="dumpsterSize"
-                  value={formData.dumpsterSize}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="10 yard">10 Yard</option>
-                  <option value="20 yard">20 Yard</option>
-                  <option value="30 yard">30 Yard</option>
-                  <option value="40 yard">40 Yard</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Service Type *
+              </label>
+              <select
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="drop-off">Drop-off</option>
+                <option value="pickup">Pickup</option>
+                <option value="exchange">Exchange</option>
+                <option value="live-load">Live Load (Wait and Load)</option>
+              </select>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status *
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="scheduled">Scheduled</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Scheduled Date *
-                </label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Scheduled Date *
+              </label>
+              <div className="relative">
+                <SafeIcon icon={FiCalendar} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                 <input
                   type="date"
                   name="scheduledDate"
                   value={formData.scheduledDate}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
+                  min={today}
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                    errors.scheduledDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
               </div>
+              {errors.scheduledDate && <p className="text-red-500 text-sm mt-1">{errors.scheduledDate}</p>}
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Scheduled Time *
-                </label>
-                <input
-                  type="time"
-                  name="scheduledTime"
-                  value={formData.scheduledTime}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Scheduled Time
+              </label>
+              <select
+                name="scheduledTime"
+                value={formData.scheduledTime}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="morning">Morning (8am - 12pm)</option>
+                <option value="afternoon">Afternoon (12pm - 5pm)</option>
+                <option value="anytime">Anytime</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="scheduled">Scheduled</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
           </div>
 
-          {/* Delivery Address with Google Maps Autocomplete */}
+          {/* Address */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <SafeIcon icon={FiMapPin} className="w-5 h-5 mr-2" />
-              Delivery Address
-            </h3>
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Street Address * (Google Maps Autocomplete)
-                </label>
-                <div className="relative">
-                  <SafeIcon icon={FiHome} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                  <input
-                    ref={addressInputRef}
-                    type="text"
-                    name="streetAddress"
-                    value={formData.streetAddress}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Start typing address... (Google will suggest)"
-                    required
-                  />
-                </div>
-                
-                {/* Map View Options */}
-                {(formData.streetAddress || formData.coordinates.lat) && (
-                  <div className="flex items-center space-x-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={openStreetView}
-                      className="flex items-center space-x-1 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <SafeIcon icon={FiEye} className="w-4 h-4" />
-                      <span>Street View</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={openSatelliteView}
-                      className="flex items-center space-x-1 px-3 py-1 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                    >
-                      <SafeIcon icon={FiMap} className="w-4 h-4" />
-                      <span>Satellite View</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Apartment, Suite, etc.
-                  </label>
-                  <input
-                    type="text"
-                    name="apartment"
-                    value={formData.apartment}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Apt 4B, Suite 200, etc."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City * (Auto-filled)
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="City will auto-fill"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State * (Auto-filled)
-                  </label>
-                  <select
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="">Select State</option>
-                    {states.map(state => (
-                      <option key={state} value={state}>{state}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ZIP Code * (Auto-filled)
-                  </label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="ZIP will auto-fill"
-                    pattern="[0-9]{5}(-[0-9]{4})?"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Country *
-                  </label>
-                  <select
-                    name="country"
-                    value={formData.country}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="United States">United States</option>
-                    <option value="Canada">Canada</option>
-                  </select>
-                </div>
-              </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Address *
+            </label>
+            <div className="relative">
+              <SafeIcon icon={FiMapPin} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                rows={3}
+                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  errors.address ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Full delivery address"
+              />
             </div>
+            {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+            
+            {selectedCustomer && (
+              <p className="text-sm text-gray-500 mt-2">
+                <span className="font-medium">Customer address:</span> {selectedCustomer.address}
+                <button
+                  type="button"
+                  className="ml-2 text-primary-600 hover:text-primary-700"
+                  onClick={() => setFormData(prev => ({ ...prev, address: selectedCustomer.address }))}
+                >
+                  Use this address
+                </button>
+              </p>
+            )}
           </div>
 
           {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Special Instructions / Notes
+              Notes
             </label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={4}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="Special instructions, gate codes, placement details, etc."
-            />
+            <div className="relative">
+              <SafeIcon icon={FiFileText} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={4}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Special instructions, placement details, etc."
+              />
+            </div>
           </div>
 
+          {/* Form Actions */}
           <div className="flex justify-end space-x-4 pt-4 border-t">
             <button
               type="button"

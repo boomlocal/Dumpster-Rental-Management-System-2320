@@ -2,37 +2,59 @@ import React, { useState } from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import UniversalPhotoUpload from '../photos/UniversalPhotoUpload';
+import toast from 'react-hot-toast';
 
 const { FiCamera } = FiIcons;
 
-const JobPhotoButton = ({ job, customer }) => {
+const JobPhotoButton = ({ job }) => {
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [photoType, setPhotoType] = useState(null);
+
+  const handleOpenPhotoUpload = (type) => {
+    if (!job.address) {
+      toast.error('Job must have a valid address to add photos');
+      return;
+    }
+    setPhotoType(type);
+    setShowPhotoUpload(true);
+  };
 
   const handlePhotoTaken = (photoData) => {
-    // Photo is automatically saved to the system
-    console.log('Photo added for job:', job.id, photoData);
+    toast.success(`${photoType} photo captured successfully`);
   };
 
   return (
     <>
-      <button
-        onClick={() => setShowPhotoUpload(true)}
-        className="flex items-center space-x-1 px-3 py-1 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors"
-        title="Upload Photos"
-      >
-        <SafeIcon icon={FiCamera} className="w-4 h-4" />
-        <span>Photos</span>
-      </button>
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => handleOpenPhotoUpload('delivery')}
+          className="flex items-center space-x-1 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Delivery Photos"
+        >
+          <SafeIcon icon={FiCamera} className="w-4 h-4" />
+          <span>Delivery</span>
+        </button>
+        <button
+          onClick={() => handleOpenPhotoUpload('pickup')}
+          className="flex items-center space-x-1 px-3 py-1 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+          title="Pickup Photos"
+        >
+          <SafeIcon icon={FiCamera} className="w-4 h-4" />
+          <span>Pickup</span>
+        </button>
+      </div>
 
       {showPhotoUpload && (
         <UniversalPhotoUpload
           jobId={job.id}
-          customerId={job.customerId}
-          type="job"
-          title={`Upload Photos - Job #${job.id} (${customer?.name || 'Unknown Customer'})`}
+          type={photoType}
+          title={`${photoType} Photos - Job #${job.id}`}
           onPhotoTaken={handlePhotoTaken}
-          onClose={() => setShowPhotoUpload(false)}
-          maxPhotos={15}
+          onClose={() => {
+            setShowPhotoUpload(false);
+            setPhotoType(null);
+          }}
+          maxPhotos={5}
         />
       )}
     </>

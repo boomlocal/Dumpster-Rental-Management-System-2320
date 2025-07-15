@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
+import { useAuth } from '../../contexts/AuthContext';
 
-const { FiX, FiDownload, FiMapPin, FiClock, FiUser, FiCamera, FiEdit3, FiSave } = FiIcons;
+const { FiX, FiDownload, FiMapPin, FiClock, FiUser, FiCamera, FiEdit3, FiSave, FiTruck, FiTrash2 } = FiIcons;
 
-const PhotoViewer = ({ photo, onClose, onDownload, customer }) => {
+const PhotoViewer = ({ photo, onClose, onDownload, onDelete, customer, job }) => {
+  const { user } = useAuth();
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [noteText, setNoteText] = useState(photo.notes || '');
+  
+  // Check if user has permission to download/delete
+  const canDownloadOrDelete = user?.role === 'admin' || user?.role === 'office_staff';
 
   const handleSaveNotes = () => {
     // In a real app, this would save to the database
@@ -21,6 +26,15 @@ const PhotoViewer = ({ photo, onClose, onDownload, customer }) => {
       const { lat, lng } = photo.location;
       const url = `https://www.google.com/maps?q=${lat},${lng}`;
       window.open(url, '_blank');
+    }
+  };
+
+  const handleDeletePhoto = () => {
+    if (canDownloadOrDelete && onDelete) {
+      if (window.confirm('Are you sure you want to delete this photo?')) {
+        onDelete(photo.id);
+        onClose();
+      }
     }
   };
 
@@ -43,7 +57,7 @@ const PhotoViewer = ({ photo, onClose, onDownload, customer }) => {
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">Photo Details</h2>
           <div className="flex items-center space-x-2">
-            {onDownload && (
+            {canDownloadOrDelete && onDownload && (
               <button
                 onClick={() => onDownload(photo)}
                 className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 flex items-center space-x-2"
@@ -68,17 +82,15 @@ const PhotoViewer = ({ photo, onClose, onDownload, customer }) => {
                   alt={`${photo.type} photo`}
                   className="w-full h-auto rounded-lg shadow-sm"
                 />
-                
                 {/* Photo Type Badge */}
-                <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium ${
-                  photo.type === 'delivery' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
+                <div
+                  className={`absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-medium ${
+                    photo.type === 'delivery' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                  }`}
+                >
                   <SafeIcon icon={FiCamera} className="w-4 h-4 inline mr-1" />
                   {photo.type} Photo
                 </div>
-
                 {/* GPS Indicator */}
                 {photo.location && (
                   <button
@@ -98,67 +110,73 @@ const PhotoViewer = ({ photo, onClose, onDownload, customer }) => {
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 <h3 className="font-semibold text-gray-900 mb-3">Photo Information</h3>
                 
+                {/* Customer Info */}
                 <div className="flex items-center space-x-3">
                   <SafeIcon icon={FiUser} className="w-5 h-5 text-gray-400" />
                   <div>
-                    <p className="font-medium text-gray-900">{customer?.name || 'Unknown Customer'}</p>
+                    <p className="font-medium text-gray-900">{photo.customerName || customer?.name || 'Unknown Customer'}</p>
                     <p className="text-sm text-gray-600">{customer?.company}</p>
                   </div>
                 </div>
-
+                
+                {/* Date/Time */}
                 <div className="flex items-center space-x-3">
                   <SafeIcon icon={FiClock} className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="font-medium text-gray-900">
-                      {photo.timestamp.toLocaleDateString()}
+                      {new Date(photo.timestamp).toLocaleDateString()}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {photo.timestamp.toLocaleTimeString()}
+                      {new Date(photo.timestamp).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
+                
+                {/* Job/Dumpster Info */}
+                <div className="flex items-center space-x-3">
+                  <SafeIcon icon={FiTruck} className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="font-medium text-gray-900">Job #{photo.jobId}</p>
+                    <p className="text-sm text-gray-600">{photo.dumpsterSize || job?.dumpsterSize}</p>
+                  </div>
+                </div>
 
+                {/* Driver Info */}
+                {photo.driverName && (
+                  <div className="flex items-center space-x-3">
+                    <SafeIcon icon={FiUser} className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="font-medium text-gray-900">Driver:</p>
+                      <p className="text-sm text-gray-600">{photo.driverName}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Location */}
                 {photo.location && (
                   <div className="flex items-start space-x-3">
                     <SafeIcon icon={FiMapPin} className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="font-medium text-gray-900">GPS Coordinates</p>
+                      <p className="font-medium text-gray-900">Location</p>
                       <p className="text-sm text-gray-600">
-                        Lat: {photo.location.lat.toFixed(6)}
+                        {photo.address}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Lng: {photo.location.lng.toFixed(6)}
+                      <p className="text-xs text-gray-500">
+                        GPS: {photo.location.lat.toFixed(6)}, {photo.location.lng.toFixed(6)}
                       </p>
-                      {photo.location.accuracy && (
-                        <p className="text-xs text-gray-500">
-                          Accuracy: ±{photo.location.accuracy.toFixed(0)}m
-                        </p>
-                      )}
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Address */}
-              {customer?.address && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Customer Address</h4>
-                  <p className="text-sm text-gray-600">{customer.address}</p>
-                </div>
-              )}
-
               {/* Notes Section */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-medium text-gray-900">Notes</h4>
-                  <button
-                    onClick={() => setIsEditingNotes(!isEditingNotes)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
+                  <button onClick={() => setIsEditingNotes(!isEditingNotes)} className="text-gray-400 hover:text-gray-600">
                     <SafeIcon icon={isEditingNotes ? FiX : FiEdit3} className="w-4 h-4" />
                   </button>
                 </div>
-
                 {isEditingNotes ? (
                   <div className="space-y-3">
                     <textarea
@@ -198,15 +216,16 @@ const PhotoViewer = ({ photo, onClose, onDownload, customer }) => {
                 )}
               </div>
 
-              {/* File Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-2">File Information</h4>
-                <div className="space-y-1 text-sm text-gray-600">
-                  <p>Filename: {photo.filename || `photo_${photo.id}.jpg`}</p>
-                  <p>Type: JPEG Image</p>
-                  <p>Job ID: #{photo.jobId}</p>
-                </div>
-              </div>
+              {/* Delete Button - Admin/Office Only */}
+              {canDownloadOrDelete && onDelete && (
+                <button
+                  onClick={handleDeletePhoto}
+                  className="w-full bg-red-100 text-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-200 flex items-center justify-center space-x-2"
+                >
+                  <SafeIcon icon={FiTrash2} className="w-4 h-4" />
+                  <span>Delete Photo</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

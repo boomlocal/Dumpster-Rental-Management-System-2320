@@ -1,11 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+```jsx
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import toast from 'react-hot-toast';
 
-const { FiX, FiSave, FiUser, FiMail, FiPhone, FiMapPin, FiHome, FiEye, FiMap } = FiIcons;
+const { FiX, FiSave, FiUser, FiMail, FiPhone, FiMapPin, FiHome, FiBuilding, FiFileText, FiNavigation } = FiIcons;
 
 const CustomerForm = ({ customer, onClose, onSave }) => {
   const { addCustomer, updateCustomer } = useData();
@@ -14,21 +15,24 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
     email: customer?.email || '',
     phone: customer?.phone || '',
     company: customer?.company || '',
-    notes: customer?.notes || '',
-    // Full address fields
+    // Separate address fields for Google Maps integration
     streetAddress: customer?.streetAddress || '',
     apartment: customer?.apartment || '',
     city: customer?.city || '',
     state: customer?.state || '',
     zipCode: customer?.zipCode || '',
     country: customer?.country || 'United States',
-    formattedAddress: customer?.formattedAddress || '',
-    coordinates: customer?.coordinates || { lat: '', lng: '' }
+    // Legacy address field for backward compatibility
+    address: customer?.address || '',
+    coordinates: customer?.coordinates || { lat: '', lng: '' },
+    notes: customer?.notes || ''
   });
 
+  const [errors, setErrors] = useState({});
   const [autocomplete, setAutocomplete] = useState(null);
   const addressInputRef = useRef(null);
 
+  // US States array
   const states = [
     'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware',
     'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
@@ -74,14 +78,19 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
 
   const handlePlaceSelect = (place) => {
     const addressComponents = place.address_components || [];
+    
+    // Initialize address parts
     let streetNumber = '';
     let route = '';
     let city = '';
     let state = '';
     let zipCode = '';
+    let country = '';
 
+    // Parse address components
     addressComponents.forEach(component => {
       const types = component.types;
+      
       if (types.includes('street_number')) {
         streetNumber = component.long_name;
       } else if (types.includes('route')) {
@@ -89,85 +98,147 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
       } else if (types.includes('locality')) {
         city = component.long_name;
       } else if (types.includes('administrative_area_level_1')) {
-        state = component.short_name;
+        state = component.long_name; // Use long_name for full state name
       } else if (types.includes('postal_code')) {
         zipCode = component.long_name;
+      } else if (types.includes('country')) {
+        country = component.long_name;
       }
     });
 
-    const fullAddress = streetNumber && route ? `${streetNumber} ${route}` : place.formatted_address;
+    // Combine street number and route for full street address
+    const fullAddress = streetNumber && route ? `${streetNumber} ${route}` : route || streetNumber;
 
+    // Update form data with all parsed components
     setFormData(prev => ({
       ...prev,
       streetAddress: fullAddress,
       city: city,
       state: state,
       zipCode: zipCode,
-      formattedAddress: place.formatted_address,
+      country: country || 'United States',
+      address: place.formatted_address, // Keep for backward compatibility
       coordinates: {
         lat: place.geometry.location.lat().toFixed(6),
         lng: place.geometry.location.lng().toFixed(6)
       }
     }));
 
+    // Clear any existing errors
+    setErrors({});
+    
     toast.success('Address details auto-filled from Google Maps');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate form data
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    // Validate email format
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
 
     // Combine address fields into a single address string for compatibility
     const fullAddress = `${formData.streetAddress}${formData.apartment ? ', ' + formData.apartment : ''}, ${formData.city}, ${formData.state} ${formData.zipCode}`;
-
+    
     const customerData = {
       ...formData,
-      address: fullAddress
-    };
-
-    if (customer) {
-      updateCustomer(customer.id, customerData);
-      toast.success('Customer updated successfully');
-      onClose();
-    } else {
-      const newCustomer = addCustomer(customerData);
-      toast.success('Customer added successfully');
-      
-      // If onSave is provided (from invoice form), call it with the new customer
-      if (onSave) {
-        onSave(newCustomer);
-      } else {
-        onClose();
+      address: fullAddress,
+      coordinates: {
+        lat: formData.coordinates.lat ? parseFloat(formData.coordinates.lat) : null,
+        lng: formData.coordinates.lng ? parseFloat(formData.coordinates.lng) : null
       }
+    };
+    
+    try {
+      if (customer) {
+        updateCustomer(customer.id, customerData);
+        toast.success('Customer updated successfully');
+      } else {
+        const newCustomer = addCustomer(customerData);
+        toast.success('Customer added successfully');
+        
+        // If onSave is provided (from invoice form), call it with the new customer
+        if (onSave) {
+          onSave(newCustomer);
+        }
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error saving customer:', error);
+      toast.error('Failed to save customer. Please try again.');
     }
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const openStreetView = () => {
-    if (formData.coordinates.lat && formData.coordinates.lng) {
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${formData.coordinates.lat},${formData.coordinates.lng}`;
-      window.open(url, '_blank');
-    } else if (formData.formattedAddress || formData.streetAddress) {
-      const address = encodeURIComponent(formData.formattedAddress || `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`);
-      const url = `https://www.google.com/maps/@?api=1&map_action=pano&query=${address}`;
-      window.open(url, '_blank');
+    const { name, value } = e.target;
+    
+    if (name === 'lat' || name === 'lng') {
+      setFormData(prev => ({
+        ...prev,
+        coordinates: {
+          ...prev.coordinates,
+          [name]: value
+        }
+      }));
     } else {
-      toast.error('No address available for Street View');
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
   };
 
-  const openSatelliteView = () => {
-    if (formData.coordinates.lat && formData.coordinates.lng) {
-      const url = `https://www.google.com/maps/@${formData.coordinates.lat},${formData.coordinates.lng},18z/data=!3m1!1e3`;
-      window.open(url, '_blank');
-    } else if (formData.formattedAddress || formData.streetAddress) {
-      const address = encodeURIComponent(formData.formattedAddress || `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`);
-      const url = `https://www.google.com/maps/search/${address}/@?data=!3m1!1e3`;
-      window.open(url, '_blank');
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          setFormData(prev => ({
+            ...prev,
+            coordinates: {
+              lat: lat.toFixed(6),
+              lng: lng.toFixed(6)
+            }
+          }));
+
+          // Reverse geocoding to get address
+          if (window.google && window.google.maps) {
+            const geocoder = new window.google.maps.Geocoder();
+            const latlng = { lat: lat, lng: lng };
+            
+            geocoder.geocode({ location: latlng }, (results, status) => {
+              if (status === 'OK' && results[0]) {
+                handlePlaceSelect(results[0]);
+              }
+            });
+          }
+          
+          toast.success('Location coordinates updated');
+        },
+        (error) => {
+          toast.error('Unable to get current location');
+        }
+      );
     } else {
-      toast.error('No address available for Satellite View');
+      toast.error('Geolocation not supported by browser');
     }
   };
 
@@ -184,7 +255,7 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
       >
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">
-            {customer ? 'Edit Customer' : 'Add Customer'}
+            {customer ? 'Edit Customer' : 'Add New Customer'}
           </h2>
           <button
             onClick={onClose}
@@ -201,7 +272,7 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name *
+                  Customer Name *
                 </label>
                 <div className="relative">
                   <SafeIcon icon={FiUser} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -211,8 +282,23 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
                     value={formData.name}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Enter full name"
                     required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Company
+                </label>
+                <div className="relative">
+                  <SafeIcon icon={FiBuilding} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -229,7 +315,6 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
                     value={formData.email}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Enter email address"
                     required
                   />
                 </div>
@@ -247,41 +332,28 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
                     value={formData.phone}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="(555) 123-4567"
                     required
                   />
                 </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Name
-                </label>
-                <input
-                  type="text"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Company name (optional)"
-                />
-              </div>
             </div>
           </div>
 
-          {/* Address Information with Google Maps Autocomplete */}
+          {/* Address Information with Google Maps Integration */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <SafeIcon icon={FiMapPin} className="w-5 h-5 mr-2" />
+              <SafeIcon icon={FiHome} className="w-5 h-5 mr-2" />
               Address Information
             </h3>
-            <div className="grid grid-cols-1 gap-6">
+            
+            <div className="space-y-4">
+              {/* Google Maps Autocomplete Address Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Street Address * (Google Maps Autocomplete)
                 </label>
                 <div className="relative">
-                  <SafeIcon icon={FiHome} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <SafeIcon icon={FiMapPin} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                   <input
                     ref={addressInputRef}
                     type="text"
@@ -293,31 +365,13 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
                     required
                   />
                 </div>
-                
-                {/* Map View Options */}
-                {(formData.streetAddress || formData.coordinates.lat) && (
-                  <div className="flex items-center space-x-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={openStreetView}
-                      className="flex items-center space-x-1 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <SafeIcon icon={FiEye} className="w-4 h-4" />
-                      <span>Street View</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={openSatelliteView}
-                      className="flex items-center space-x-1 px-3 py-1 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                    >
-                      <SafeIcon icon={FiMap} className="w-4 h-4" />
-                      <span>Satellite View</span>
-                    </button>
-                  </div>
-                )}
+                <p className="text-sm text-gray-500 mt-1">
+                  Start typing an address and Google Maps will provide suggestions
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Address Components Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Apartment, Suite, etc.
@@ -346,9 +400,7 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
                     required
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     State * (Auto-filled)
@@ -383,16 +435,15 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
                   />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Country *
+                    Country
                   </label>
                   <select
                     name="country"
                     value={formData.country}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    required
                   >
                     <option value="United States">United States</option>
                     <option value="Canada">Canada</option>
@@ -402,21 +453,75 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
             </div>
           </div>
 
+          {/* GPS Coordinates */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">GPS Coordinates (Auto-filled)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Latitude
+                </label>
+                <input
+                  type="number"
+                  step="0.000001"
+                  name="lat"
+                  value={formData.coordinates.lat}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Auto-filled from address"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Longitude
+                </label>
+                <input
+                  type="number"
+                  step="0.000001"
+                  name="lng"
+                  value={formData.coordinates.lng}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Auto-filled from address"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  className="flex items-center space-x-2 px-4 py-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
+                >
+                  <SafeIcon icon={FiNavigation} className="w-4 h-4" />
+                  <span>Use Current Location</span>
+                </button>
+                <p className="text-sm text-gray-500 mt-1">
+                  Coordinates are automatically filled when you select an address from Google Maps
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Notes
             </label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={4}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="Additional notes about the customer, special instructions, etc."
-            />
+            <div className="relative">
+              <SafeIcon icon={FiFileText} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={4}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Additional notes about this customer..."
+              />
+            </div>
           </div>
 
+          {/* Form Actions */}
           <div className="flex justify-end space-x-4 pt-4 border-t">
             <button
               type="button"
@@ -440,3 +545,4 @@ const CustomerForm = ({ customer, onClose, onSave }) => {
 };
 
 export default CustomerForm;
+```
