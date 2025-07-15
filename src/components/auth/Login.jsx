@@ -1,49 +1,64 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
-import SafeIcon from '../common/SafeIcon';
-import toast from 'react-hot-toast';
+import SafeIcon from '../../common/SafeIcon';
+
+const { FiTruck, FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } = FiIcons;
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const result = await login(email, password);
       if (result.success) {
-        toast.success('Login successful!');
-        navigate('/dashboard');
+        // Navigate based on user role
+        if (result.user.role === 'customer') {
+          navigate('/customer-portal');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
-        toast.error(result.error || 'Login failed');
+        setError(result.error);
       }
-    } catch (error) {
-      toast.error('An error occurred during login');
+    } catch (err) {
+      setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDemoLogin = async (demoEmail) => {
+    setEmail(demoEmail);
+    setPassword('password');
+    setError('');
     setLoading(true);
+
     try {
       const result = await login(demoEmail, 'password');
       if (result.success) {
-        toast.success('Demo login successful!');
-        navigate('/dashboard');
+        if (result.user.role === 'customer') {
+          navigate('/customer-portal');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
-        toast.error('Demo login failed');
+        setError(result.error);
       }
-    } catch (error) {
-      toast.error('An error occurred');
+    } catch (err) {
+      setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -59,7 +74,7 @@ const Login = () => {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="bg-primary-100 p-3 rounded-full">
-              <SafeIcon icon={FiIcons.FiTruck} className="w-8 h-8 text-primary-600" />
+              <SafeIcon icon={FiTruck} className="w-8 h-8 text-primary-600" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">BinHaulerPro</h1>
@@ -71,29 +86,49 @@ const Login = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email Address
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="Enter your email"
-              required
-            />
+            <div className="relative">
+              <SafeIcon icon={FiMail} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="Enter your password"
-              required
-            />
+            <div className="relative">
+              <SafeIcon icon={FiLock} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Enter your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              >
+                <SafeIcon icon={showPassword ? FiEyeOff : FiEye} className="w-5 h-5" />
+              </button>
+            </div>
           </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center">
+              <SafeIcon icon={FiAlertCircle} className="w-4 h-4 mr-2" />
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"
@@ -109,10 +144,31 @@ const Login = () => {
           <div className="space-y-2">
             <button
               onClick={() => handleDemoLogin('admin@binhaulerpro.com')}
-              className="w-full text-left text-sm text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
+              className="w-full text-left text-xs text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
               disabled={loading}
             >
               <strong>Admin:</strong> admin@binhaulerpro.com / password
+            </button>
+            <button
+              onClick={() => handleDemoLogin('office@binhaulerpro.com')}
+              className="w-full text-left text-xs text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
+              disabled={loading}
+            >
+              <strong>Office:</strong> office@binhaulerpro.com / password
+            </button>
+            <button
+              onClick={() => handleDemoLogin('driver@binhaulerpro.com')}
+              className="w-full text-left text-xs text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
+              disabled={loading}
+            >
+              <strong>Driver:</strong> driver@binhaulerpro.com / password
+            </button>
+            <button
+              onClick={() => handleDemoLogin('customer@binhaulerpro.com')}
+              className="w-full text-left text-xs text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
+              disabled={loading}
+            >
+              <strong>Customer:</strong> customer@binhaulerpro.com / password
             </button>
           </div>
         </div>
