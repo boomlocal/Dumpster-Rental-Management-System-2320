@@ -1,17 +1,13 @@
-```javascript
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  // Ensure proper base path for assets
-  base: '',
+  base: './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    // Enable source maps for debugging
-    sourcemap: true,
-    // Ensure assets are properly hashed
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,13 +21,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true,
-    open: true
+    host: true
   },
   preview: {
     port: 4173,
-    host: true,
-    open: true
+    host: true
   }
 })
-```

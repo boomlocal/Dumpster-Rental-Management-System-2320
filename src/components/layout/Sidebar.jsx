@@ -1,24 +1,26 @@
-```jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 
-const { FiHome, FiUsers, FiTruck, FiCalendar, FiMapPin, FiBarChart3, FiSettings, FiClipboard, FiUserPlus, FiDollarSign, FiCamera } = FiIcons;
+const { 
+  FiHome, FiUsers, FiTruck, FiCalendar, FiMapPin, FiBarChart3, 
+  FiSettings, FiClipboard, FiUserPlus, FiDollarSign, FiCamera
+} = FiIcons;
 
 const Sidebar = () => {
   const menuItems = [
-    { path: '/app/dashboard', icon: FiHome, label: 'Dashboard' },
-    { path: '/app/customers', icon: FiUsers, label: 'Customers' },
-    { path: '/app/jobs', icon: FiClipboard, label: 'Jobs' },
-    { path: '/app/scheduling', icon: FiCalendar, label: 'Scheduling' },
-    { path: '/app/tracking', icon: FiMapPin, label: 'Tracking' },
-    { path: '/app/billing', icon: FiDollarSign, label: 'Billing' },
-    { path: '/app/inventory', icon: FiTruck, label: 'Inventory' },
-    { path: '/app/photos', icon: FiCamera, label: 'Photos' },
-    { path: '/app/reports', icon: FiBarChart3, label: 'Reports' },
-    { path: '/app/users', icon: FiUserPlus, label: 'Users' },
-    { path: '/app/settings', icon: FiSettings, label: 'Settings' }
+    { path: '/dashboard', icon: FiHome, label: 'Dashboard' },
+    { path: '/customers', icon: FiUsers, label: 'Customers' },
+    { path: '/jobs', icon: FiClipboard, label: 'Jobs' },
+    { path: '/scheduling', icon: FiCalendar, label: 'Scheduling' },
+    { path: '/tracking', icon: FiMapPin, label: 'Tracking' },
+    { path: '/billing', icon: FiDollarSign, label: 'Billing' },
+    { path: '/inventory', icon: FiTruck, label: 'Inventory' },
+    { path: '/photos', icon: FiCamera, label: 'Photos' },
+    { path: '/reports', icon: FiBarChart3, label: 'Reports' },
+    { path: '/users', icon: FiUserPlus, label: 'Users' },
+    { path: '/settings', icon: FiSettings, label: 'Settings' }
   ];
 
   return (
@@ -35,7 +37,7 @@ const Sidebar = () => {
           </div>
         </div>
       </div>
-
+      
       {/* Navigation Menu - Scrollable */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
@@ -44,8 +46,8 @@ const Sidebar = () => {
             to={item.path}
             className={({ isActive }) =>
               `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
+                isActive 
+                  ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`
             }
@@ -55,7 +57,7 @@ const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
-
+      
       {/* User Info Footer */}
       <div className="p-4 border-t flex-shrink-0">
         <div className="flex items-center space-x-3 px-4 py-3">
@@ -73,4 +75,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-```
