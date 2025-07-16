@@ -1,4 +1,3 @@
-```jsx
 import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { motion } from 'framer-motion';
@@ -11,7 +10,7 @@ import toast from 'react-hot-toast';
 const { FiPlus, FiSearch, FiFilter } = FiIcons;
 
 const JobManagement = () => {
-  const { jobs, addJob, updateJob } = useData();
+  const { jobs, addJob, updateJob, deleteJob } = useData();
   const [showJobForm, setShowJobForm] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,6 +42,16 @@ const JobManagement = () => {
     } catch (error) {
       console.error('Error updating job:', error);
       toast.error('Failed to update job');
+    }
+  };
+
+  const handleDeleteJob = (jobId) => {
+    try {
+      deleteJob(jobId);
+      toast.success('Job deleted successfully');
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast.error('Failed to delete job');
     }
   };
 
@@ -100,10 +109,11 @@ const JobManagement = () => {
             </div>
           </div>
         </div>
-
-        <JobList
-          jobs={filteredJobs}
-          onEditJob={handleEditJob}
+        
+        <JobList 
+          jobs={filteredJobs} 
+          onEditJob={handleEditJob} 
+          onDeleteJob={handleDeleteJob}
         />
       </div>
 
@@ -119,4 +129,3 @@ const JobManagement = () => {
 };
 
 export default JobManagement;
-```

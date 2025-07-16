@@ -1,4 +1,4 @@
-# BinHaulerPro Deployment Checklist
+# BinHauler Deployment Checklist
 
 ## ✅ Fixed Issues
 
@@ -67,10 +67,10 @@ npm run preview
 ## 🔐 Demo Accounts
 
 ```
-Admin: admin@binhaulerpro.com / password
-Office: office@binhaulerpro.com / password  
-Driver: driver@binhaulerpro.com / password
-Customer: customer@binhaulerpro.com / password
+Admin: admin@binhauler.com / password
+Office: office@binhauler.com / password
+Driver: driver@binhauler.com / password
+Customer: customer@binhauler.com / password
 ```
 
 ## 📊 Performance Optimizations
@@ -89,6 +89,11 @@ npm run dev
 ```
 
 Visit: `http://localhost:5173`
+
+## 🌐 Production URLs
+
+- **Root Domain**: https://www.binhauler.com
+- **Application**: https://www.app.binhauler.com
 
 ---
 

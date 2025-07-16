@@ -1,165 +1,223 @@
-import React, { useState } from 'react';
+```jsx
+import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
+import AssetForm from './AssetForm';
+import AssetList from './AssetList';
+import ActivityLogs from './ActivityLogs';
 import toast from 'react-hot-toast';
 
-const { 
-  FiPlus, 
-  FiFilter, 
-  FiSearch, 
-  FiPackage,
-  FiSettings,
-  FiGrid,
-  FiList,
-  FiMapPin,
-  FiCamera,
-  FiEdit3,
-  FiTrash2,
-  FiX,
-  FiSave
-} = FiIcons;
+const { FiPlus, FiPackage, FiSearch, FiFilter, FiSettings } = FiIcons;
 
 const InventoryManagement = () => {
-  // ... (keep all your existing state and helper functions)
+  const { user } = useAuth();
+  const [assets, setAssets] = useState([
+    {
+      id: 1,
+      assetNumber: 'D-001',
+      type: 'dumpster',
+      containerSize: '20',
+      containerUnit: 'yard',
+      status: 'available',
+      condition: 'excellent',
+      manufacturer: 'Waste Management Co',
+      model: 'WM-2000',
+      location: {
+        type: 'yard',
+        address: 'Main Yard - 123 Industrial Blvd'
+      },
+      purchaseDate: '2023-01-15',
+      purchasePrice: 5000,
+      notes: 'Standard 20-yard dumpster for residential use'
+    }
+  ]);
+
+  const [showAssetForm, setShowAssetForm] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Access control check
+  if (user?.role !== 'admin' && user?.role !== 'office_staff') {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <SafeIcon 
+              icon={FiPackage} 
+              className="w-16 h-16 text-gray-300 mx-auto mb-4"
+            />
+            <h3 className="text-lg font-semibold text-gray-700">
+              Access Denied
+            </h3>
+            <p className="text-gray-500">
+              Only administrators and office staff can manage inventory.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Memoized filters
+  const filteredAssets = useMemo(() => {
+    return assets.filter(asset => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        asset.assetNumber.toLowerCase().includes(searchLower) ||
+        asset.type.toLowerCase().includes(searchLower) ||
+        asset.manufacturer?.toLowerCase().includes(searchLower) ||
+        asset.model?.toLowerCase().includes(searchLower);
+        
+      const matchesStatus = statusFilter === 'all' || asset.status === statusFilter;
+      const matchesType = typeFilter === 'all' || asset.type === typeFilter;
+      
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  }, [assets, searchTerm, statusFilter, typeFilter]);
+
+  // Memoized stats
+  const stats = useMemo(() => {
+    return {
+      total: assets.length,
+      available: assets.filter(a => a.status === 'available').length,
+      deployed: assets.filter(a => a.status === 'deployed').length,
+      maintenance: assets.filter(a => a.status === 'maintenance').length
+    };
+  }, [assets]);
+
+  const handleAddAsset = useCallback(async (assetData) => {
+    try {
+      setIsLoading(true);
+      const newAsset = {
+        ...assetData,
+        id: Date.now(),
+        createdAt: new Date(),
+        createdBy: user?.name || 'Unknown'
+      };
+      setAssets(prev => [...prev, newAsset]);
+      setShowAssetForm(false);
+      toast.success('Asset added successfully');
+    } catch (error) {
+      console.error('Error adding asset:', error);
+      toast.error('Failed to add asset');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  const handleEditAsset = (asset) => {
+    setSelectedAsset(asset);
+    setShowAssetForm(true);
+  };
+
+  const handleDeleteAsset = (assetId) => {
+    setAssets(prev => prev.filter(a => a.id !== assetId));
+    toast.success('Asset deleted successfully');
+  };
 
   return (
-    <div className="main-content bg-gray-50">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            setSelectedAsset(null);
-            setShowAssetForm(true);
-          }}
-          className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 flex items-center space-x-2"
-        >
-          <SafeIcon icon={FiPlus} className="w-5 h-5" />
-          <span>Add Asset</span>
-        </motion.button>
-      </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowAssetForm(true)}
+            className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 flex items-center space-x-2"
+          >
+            <SafeIcon icon={FiPlus} className="w-5 h-5" />
+            <span>Add Asset</span>
+          </motion.button>
+        </div>
 
-      {/* Main Container */}
-      <div className="inventory-container">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Assets</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <SafeIcon icon={FiPackage} className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Add more stat cards here */}
+        </div>
+
         {/* Search and Filters */}
-        <div className="mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 mb-6">
             <div className="relative flex-1 max-w-md">
               <SafeIcon icon={FiSearch} className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search inventory..."
+                placeholder="Search assets..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                <SafeIcon icon={FiFilter} className="w-5 h-5" />
-                <span>Filters</span>
-              </button>
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white text-primary-600 shadow' : 'text-gray-600'}`}
-                >
-                  <SafeIcon icon={FiGrid} className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded ${viewMode === 'list' ? 'bg-white text-primary-600 shadow' : 'text-gray-600'}`}
-                >
-                  <SafeIcon icon={FiList} className="w-5 h-5" />
-                </button>
-              </div>
+                <option value="all">All Status</option>
+                <option value="available">Available</option>
+                <option value="deployed">Deployed</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="all">All Types</option>
+                <option value="dumpster">Dumpster</option>
+                <option value="truck">Truck</option>
+                <option value="equipment">Equipment</option>
+              </select>
             </div>
           </div>
 
-          {/* Filters Panel */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4"
-              >
-                {/* ... (keep your existing filter inputs) */}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Content */}
-        <div className="mt-6">
-          {filteredAssets.length === 0 ? (
-            renderEmptyState()
-          ) : (
-            <div className={viewMode === 'grid' ? 'inventory-grid' : 'space-y-4'}>
-              {viewMode === 'grid' ? renderGridView() : renderListView()}
-            </div>
-          )}
+          {/* Asset List */}
+          <AssetList
+            assets={filteredAssets}
+            onEditAsset={handleEditAsset}
+            onDeleteAsset={handleDeleteAsset}
+          />
         </div>
       </div>
 
-      {/* Modal */}
-      <AnimatePresence>
-        {showAssetForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="modal-overlay"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="modal-container"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedAsset ? 'Edit Asset' : 'Add New Asset'}
-                </h2>
-                <button
-                  onClick={() => setShowAssetForm(false)}
-                  className="text-gray-400 hover:text-gray-600 p-2"
-                >
-                  <SafeIcon icon={FiX} className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="p-6">
-                <div className="text-center py-8">
-                  <SafeIcon icon={FiSettings} className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">Asset form would appear here</p>
-                  <p className="text-gray-400 text-sm mb-6">This is a simplified demo implementation</p>
-                  <button
-                    onClick={() => {
-                      toast.success(selectedAsset ? 'Asset updated successfully' : 'Asset created successfully');
-                      setShowAssetForm(false);
-                    }}
-                    className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 inline-flex items-center space-x-2"
-                  >
-                    <SafeIcon icon={FiSave} className="w-4 h-4" />
-                    <span>Save Asset</span>
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Asset Form Modal */}
+      {showAssetForm && (
+        <AssetForm
+          asset={selectedAsset}
+          onClose={() => {
+            setShowAssetForm(false);
+            setSelectedAsset(null);
+          }}
+          onSave={selectedAsset ? handleEditAsset : handleAddAsset}
+        />
+      )}
     </div>
   );
 };
 
 export default InventoryManagement;
+```

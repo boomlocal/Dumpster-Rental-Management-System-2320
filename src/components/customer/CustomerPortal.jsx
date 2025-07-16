@@ -29,7 +29,7 @@ const CustomerPortal = () => {
                 <SafeIcon icon={FiTruck} className="w-6 h-6 text-primary-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">HaulerPro</h1>
+                <h1 className="text-xl font-bold text-gray-900">BinHauler</h1>
                 <p className="text-sm text-gray-500">Customer Portal</p>
               </div>
             </div>

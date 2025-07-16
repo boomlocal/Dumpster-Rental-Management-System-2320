@@ -5,27 +5,27 @@ export const generateInvoicePDF = async (invoice) => {
     if (typeof window !== 'undefined' && window.jsPDF) {
       const { jsPDF } = window.jsPDF;
       const pdf = new jsPDF();
-      
+
       // Company info
       const companyInfo = {
-        name: 'BinHaulerPro Inc.',
+        name: 'BinHauler Inc.',
         address: '123 Business Street',
         city: 'Business City, CA 12345',
         phone: '(555) 123-4567',
-        email: 'billing@binhaulerpro.com',
-        website: 'https://binhaulerpro.com'
+        email: 'billing@binhauler.com',
+        website: 'https://www.binhauler.com'
       };
 
       // Header
       pdf.setFillColor(2, 132, 199);
       pdf.rect(0, 0, 210, 40, 'F');
-      
+
       // Company name
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(24);
       pdf.setFont('helvetica', 'bold');
       pdf.text(companyInfo.name, 20, 25);
-      
+
       // Invoice title
       pdf.setTextColor(31, 41, 55);
       pdf.setFontSize(20);
@@ -54,7 +54,6 @@ export const generateInvoicePDF = async (invoice) => {
       pdf.setTextColor(31, 41, 55);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Bill To:', 20, yPos);
-      
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'normal');
       pdf.text(invoice.customerName, 20, yPos + 8);
@@ -67,7 +66,7 @@ export const generateInvoicePDF = async (invoice) => {
       pdf.text('Qty', 120, yPos);
       pdf.text('Rate', 140, yPos);
       pdf.text('Amount', 170, yPos);
-      
+
       // Draw line under header
       pdf.line(20, yPos + 2, 190, yPos + 2);
 
@@ -86,20 +85,20 @@ export const generateInvoicePDF = async (invoice) => {
       yPos += 10;
       pdf.line(130, yPos, 190, yPos);
       yPos += 10;
-      
+
       pdf.text('Subtotal:', 130, yPos);
       pdf.text(`$${invoice.subtotal.toFixed(2)}`, 170, yPos);
-      
+
       if (invoice.discountAmount > 0) {
         yPos += 8;
         pdf.text('Discount:', 130, yPos);
         pdf.text(`-$${invoice.discountAmount.toFixed(2)}`, 170, yPos);
       }
-      
+
       yPos += 8;
       pdf.text('Tax:', 130, yPos);
       pdf.text(`$${invoice.tax.toFixed(2)}`, 170, yPos);
-      
+
       yPos += 10;
       pdf.setFont('helvetica', 'bold');
       pdf.text('Total:', 130, yPos);
@@ -132,9 +131,9 @@ Tax: $${invoice.tax.toFixed(2)}
 Total: $${invoice.total.toFixed(2)}
 
 Thank you for your business!
-BinHaulerPro Inc.
-      `;
-      
+BinHauler Inc.
+`;
+
       const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

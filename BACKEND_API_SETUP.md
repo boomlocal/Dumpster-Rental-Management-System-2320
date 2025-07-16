@@ -1,4 +1,4 @@
-# Backend API Setup for BinHaulerPro
+# Backend API Setup for BinHauler
 
 ## 📋 Required Backend Endpoints
 
@@ -14,7 +14,6 @@ app.post('/api/send-sms', async (req, res) => {
   
   try {
     const client = require('twilio')(twilioConfig.accountSid, twilioConfig.authToken);
-    
     const messageResult = await client.messages.create({
       body: message,
       from: twilioConfig.phoneNumber,
@@ -36,7 +35,6 @@ app.post('/api/send-voice', async (req, res) => {
   
   try {
     const client = require('twilio')(twilioConfig.accountSid, twilioConfig.authToken);
-    
     const call = await client.calls.create({
       twiml: `<Response><Say>${message}</Say></Response>`,
       to: to,
@@ -114,7 +112,7 @@ DATABASE_URL=your_database_url
 JWT_SECRET=your_jwt_secret
 
 # CORS Origins
-CORS_ORIGINS=http://localhost:5173,https://binhaulerpro.com
+CORS_ORIGINS=http://localhost:5173,https://www.app.binhauler.com
 ```
 
 ## 📱 Mobile App Considerations

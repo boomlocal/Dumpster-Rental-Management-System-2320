@@ -172,19 +172,17 @@ export const DataProvider = ({ children }) => {
 
   // Customer operations
   const addCustomer = (customerData) => {
-    const newCustomer = {
-      ...customerData,
-      id: Date.now(),
-      createdAt: new Date()
-    };
+    const newCustomer = { ...customerData, id: Date.now(), createdAt: new Date() };
     setCustomers(prev => [...prev, newCustomer]);
     return newCustomer;
   };
 
   const updateCustomer = (id, updates) => {
-    setCustomers(prev => prev.map(customer => 
-      customer.id === id ? { ...customer, ...updates } : customer
-    ));
+    setCustomers(prev => 
+      prev.map(customer => 
+        customer.id === id ? { ...customer, ...updates } : customer
+      )
+    );
   };
 
   const deleteCustomer = (id) => {
@@ -193,19 +191,17 @@ export const DataProvider = ({ children }) => {
 
   // Job operations
   const addJob = (jobData) => {
-    const newJob = {
-      ...jobData,
-      id: Date.now(),
-      createdAt: new Date()
-    };
+    const newJob = { ...jobData, id: Date.now(), createdAt: new Date() };
     setJobs(prev => [...prev, newJob]);
     return newJob;
   };
 
   const updateJob = (id, updates) => {
-    setJobs(prev => prev.map(job => 
-      job.id === id ? { ...job, ...updates } : job
-    ));
+    setJobs(prev => 
+      prev.map(job => 
+        job.id === id ? { ...job, ...updates } : job
+      )
+    );
   };
 
   const deleteJob = (id) => {
@@ -214,18 +210,17 @@ export const DataProvider = ({ children }) => {
 
   // Dumpster operations
   const addDumpster = (dumpsterData) => {
-    const newDumpster = {
-      ...dumpsterData,
-      id: Date.now()
-    };
+    const newDumpster = { ...dumpsterData, id: Date.now() };
     setDumpsters(prev => [...prev, newDumpster]);
     return newDumpster;
   };
 
   const updateDumpster = (id, updates) => {
-    setDumpsters(prev => prev.map(dumpster => 
-      dumpster.id === id ? { ...dumpster, ...updates } : dumpster
-    ));
+    setDumpsters(prev => 
+      prev.map(dumpster => 
+        dumpster.id === id ? { ...dumpster, ...updates } : dumpster
+      )
+    );
   };
 
   const deleteDumpster = (id) => {
@@ -234,18 +229,17 @@ export const DataProvider = ({ children }) => {
 
   // Photo operations
   const addPhoto = (photoData) => {
-    const newPhoto = {
-      ...photoData,
-      id: photoData.id || Date.now()
-    };
+    const newPhoto = { ...photoData, id: photoData.id || Date.now() };
     setPhotos(prev => [...prev, newPhoto]);
     return newPhoto;
   };
 
   const updatePhotoNotes = (id, notes) => {
-    setPhotos(prev => prev.map(photo => 
-      photo.id === id ? { ...photo, notes } : photo
-    ));
+    setPhotos(prev => 
+      prev.map(photo => 
+        photo.id === id ? { ...photo, notes } : photo
+      )
+    );
   };
 
   const deletePhoto = (id) => {

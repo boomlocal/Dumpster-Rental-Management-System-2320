@@ -47,6 +47,7 @@ const PhotoLibrary = () => {
     const dumpsterSizes = [...new Set(jobs.map(job => job.dumpsterSize).filter(Boolean))];
     const photoTypes = [...new Set(photos.map(photo => photo.type).filter(Boolean))];
     const userRoles = [...new Set(photos.map(photo => photo.userRole).filter(Boolean))];
+    
     return { cities, states, dumpsterSizes, photoTypes, userRoles };
   };
 
@@ -73,6 +74,7 @@ const PhotoLibrary = () => {
           photo.location?.state,
           photo.address
         ].join(' ').toLowerCase();
+        
         return searchableText.includes(term);
       });
     }
@@ -81,6 +83,7 @@ const PhotoLibrary = () => {
     if (filters.dateRange !== 'all') {
       const now = new Date();
       const startDate = new Date();
+      
       switch (filters.dateRange) {
         case 'today':
           startDate.setHours(0, 0, 0, 0);
@@ -102,6 +105,7 @@ const PhotoLibrary = () => {
         default:
           break;
       }
+      
       if (filters.dateRange !== 'custom') {
         filtered = filtered.filter(photo => new Date(photo.timestamp) >= startDate);
       }
@@ -182,7 +186,7 @@ const PhotoLibrary = () => {
       toast.error('Only administrators and office staff can download photos');
       return;
     }
-
+    
     try {
       const response = await fetch(photo.url);
       const blob = await response.blob();
@@ -194,6 +198,7 @@ const PhotoLibrary = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
       toast.success('Photo downloaded successfully');
     } catch (error) {
       console.error('Download error:', error);
@@ -206,23 +211,24 @@ const PhotoLibrary = () => {
       toast.error('Only administrators and office staff can download photos');
       return;
     }
-
+    
     if (filteredPhotos.length === 0) {
       toast.error('No photos to download');
       return;
     }
-
+    
     toast.success(`Starting download of ${filteredPhotos.length} photos...`);
+    
     for (let i = 0; i < filteredPhotos.length; i++) {
       setTimeout(() => downloadPhoto(filteredPhotos[i]), i * 500);
     }
   };
-  
+
   const handleUpdatePhotoNotes = (photoId, notes) => {
     updatePhotoNotes(photoId, notes);
     toast.success('Photo notes updated');
   };
-  
+
   const handleDeletePhoto = (photoId) => {
     if (!canDownloadOrDelete) {
       toast.error('Only administrators and office staff can delete photos');
@@ -243,6 +249,7 @@ const PhotoLibrary = () => {
           <span className="text-sm text-gray-500">
             {filteredPhotos.length} photos
           </span>
+          
           {canDownloadOrDelete && filteredPhotos.length > 0 && (
             <button
               onClick={downloadAllFiltered}
@@ -268,6 +275,7 @@ const PhotoLibrary = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
+          
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -276,6 +284,7 @@ const PhotoLibrary = () => {
               <SafeIcon icon={FiFilter} className="w-5 h-5" />
               <span>Filters</span>
             </button>
+            
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
@@ -292,7 +301,7 @@ const PhotoLibrary = () => {
             </div>
           </div>
         </div>
-
+        
         {showFilters && (
           <PhotoFilters
             filters={filters}
@@ -381,6 +390,7 @@ const PhotoGridItem = ({ photo, customer, job, onView, canDownload }) => {
           </div>
         )}
       </div>
+      
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-900">
@@ -390,15 +400,18 @@ const PhotoGridItem = ({ photo, customer, job, onView, canDownload }) => {
             {photo.type}
           </span>
         </div>
+        
         <div className="text-xs text-gray-500">
           {job && (
             <div className="mb-1">
               Job #{job.id} - {photo.dumpsterSize || job.dumpsterSize}
             </div>
           )}
+          
           {photo.address && (
             <div className="truncate">{photo.address}</div>
           )}
+          
           {photo.driverName && (
             <div className="truncate">Driver: {photo.driverName}</div>
           )}
@@ -424,6 +437,7 @@ const PhotoListItem = ({ photo, customer, job, onView, canDownload }) => {
           onClick={onView}
         />
       </div>
+      
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-3">
           <span className="text-sm font-medium text-gray-900">
@@ -433,6 +447,7 @@ const PhotoListItem = ({ photo, customer, job, onView, canDownload }) => {
             {photo.type}
           </span>
         </div>
+        
         <div className="mt-1 text-sm text-gray-500">
           {job && (
             <span className="mr-3">Job #{job.id} - {photo.dumpsterSize || job.dumpsterSize}</span>
@@ -441,10 +456,12 @@ const PhotoListItem = ({ photo, customer, job, onView, canDownload }) => {
             <span>{photo.address}</span>
           )}
         </div>
+        
         <div className="mt-1 text-xs text-gray-400">
           Driver: {photo.driverName || 'Unknown'} • {new Date(photo.timestamp).toLocaleString()}
         </div>
       </div>
+      
       <div className="flex-shrink-0 flex items-center space-x-2">
         <button
           onClick={onView}
@@ -452,6 +469,7 @@ const PhotoListItem = ({ photo, customer, job, onView, canDownload }) => {
         >
           <SafeIcon icon={FiCamera} className="w-5 h-5" />
         </button>
+        
         {canDownload && (
           <button
             onClick={onView}

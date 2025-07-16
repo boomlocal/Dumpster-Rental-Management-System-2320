@@ -1,4 +1,4 @@
-# Twilio Setup Guide for BinHaulerPro
+# Twilio Setup Guide for BinHauler
 
 ## 📋 Complete Setup Instructions
 
@@ -24,8 +24,8 @@
 3. **Select Number**: Choose a number in your area
 4. **Purchase**: Usually $1/month
 
-### Step 4: Configure in BinHaulerPro
-1. **Login as Admin**: Use `admin@binhaulerpro.com`
+### Step 4: Configure in BinHauler
+1. **Login as Admin**: Use `admin@binhauler.com`
 2. **Go to Notifications**: Click "Notifications" in sidebar
 3. **Enter Twilio Settings**:
    - Account SID: `ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
@@ -62,8 +62,8 @@
 1. **Go to Phone Numbers**: Console → Phone Numbers → Manage
 2. **Select Your Number**
 3. **Configure Webhooks**:
-   - SMS: `https://yourdomain.com/api/sms-webhook`
-   - Voice: `https://yourdomain.com/api/voice-webhook`
+   - SMS: `https://www.app.binhauler.com/api/sms-webhook`
+   - Voice: `https://www.app.binhauler.com/api/voice-webhook`
 
 ### Message Templates
 Create reusable templates for:

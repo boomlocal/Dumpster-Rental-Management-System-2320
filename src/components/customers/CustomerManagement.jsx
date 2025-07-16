@@ -5,11 +5,12 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import CustomerForm from './CustomerForm';
 import CustomerList from './CustomerList';
+import toast from 'react-hot-toast';
 
 const { FiPlus, FiSearch, FiUsers } = FiIcons;
 
 const CustomerManagement = () => {
-  const { customers } = useData();
+  const { customers, deleteCustomer } = useData();
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +24,16 @@ const CustomerManagement = () => {
   const handleEditCustomer = (customer) => {
     setSelectedCustomer(customer);
     setShowCustomerForm(true);
+  };
+
+  const handleDeleteCustomer = (customerId) => {
+    try {
+      deleteCustomer(customerId);
+      toast.success('Customer deleted successfully');
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      toast.error('Failed to delete customer');
+    }
   };
 
   const handleCloseForm = () => {
@@ -57,14 +68,17 @@ const CustomerManagement = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
-          
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <SafeIcon icon={FiUsers} className="w-5 h-5" />
             <span>{filteredCustomers.length} customers</span>
           </div>
         </div>
-
-        <CustomerList customers={filteredCustomers} onEditCustomer={handleEditCustomer} />
+        
+        <CustomerList 
+          customers={filteredCustomers} 
+          onEditCustomer={handleEditCustomer} 
+          onDeleteCustomer={handleDeleteCustomer}
+        />
       </div>
 
       {showCustomerForm && (

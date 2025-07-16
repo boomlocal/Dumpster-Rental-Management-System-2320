@@ -77,7 +77,7 @@ const Login = () => {
               <SafeIcon icon={FiTruck} className="w-8 h-8 text-primary-600" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">BinHaulerPro</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">BinHauler</h1>
           <p className="text-gray-600">Dumpster Rental Management</p>
         </div>
 
@@ -143,32 +143,32 @@ const Login = () => {
           <p className="text-sm text-gray-600 mb-3 font-medium">Demo Accounts:</p>
           <div className="space-y-2">
             <button
-              onClick={() => handleDemoLogin('admin@binhaulerpro.com')}
+              onClick={() => handleDemoLogin('admin@binhauler.com')}
               className="w-full text-left text-xs text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
               disabled={loading}
             >
-              <strong>Admin:</strong> admin@binhaulerpro.com / password
+              <strong>Admin:</strong> admin@binhauler.com / password
             </button>
             <button
-              onClick={() => handleDemoLogin('office@binhaulerpro.com')}
+              onClick={() => handleDemoLogin('office@binhauler.com')}
               className="w-full text-left text-xs text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
               disabled={loading}
             >
-              <strong>Office:</strong> office@binhaulerpro.com / password
+              <strong>Office:</strong> office@binhauler.com / password
             </button>
             <button
-              onClick={() => handleDemoLogin('driver@binhaulerpro.com')}
+              onClick={() => handleDemoLogin('driver@binhauler.com')}
               className="w-full text-left text-xs text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
               disabled={loading}
             >
-              <strong>Driver:</strong> driver@binhaulerpro.com / password
+              <strong>Driver:</strong> driver@binhauler.com / password
             </button>
             <button
-              onClick={() => handleDemoLogin('customer@binhaulerpro.com')}
+              onClick={() => handleDemoLogin('customer@binhauler.com')}
               className="w-full text-left text-xs text-gray-700 hover:text-primary-600 p-2 hover:bg-white rounded transition-colors"
               disabled={loading}
             >
-              <strong>Customer:</strong> customer@binhaulerpro.com / password
+              <strong>Customer:</strong> customer@binhauler.com / password
             </button>
           </div>
         </div>

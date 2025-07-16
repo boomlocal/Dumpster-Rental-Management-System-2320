@@ -1,3 +1,4 @@
+```jsx
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -14,10 +15,8 @@ const Layout = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 relative bg-gray-50">
-          <div className="absolute inset-0 overflow-y-auto">
-            <Outlet />
-          </div>
+        <main className="flex-1 overflow-auto bg-gray-50">
+          <Outlet />
         </main>
       </div>
     </div>
@@ -25,3 +24,4 @@ const Layout = () => {
 };
 
 export default Layout;
+```

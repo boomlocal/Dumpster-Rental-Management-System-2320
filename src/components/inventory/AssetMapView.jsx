@@ -1,9 +1,8 @@
-```jsx
 import React, { useEffect, useRef, useState } from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 
-const { FiMapPin, FiHome, FiRefreshCw, FiTruck, FiSettings } = FiIcons;
+const { FiMapPin, FiHome, FiRefreshCw, FiTruck, FiSettings, FiEdit, FiX } = FiIcons;
 
 const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }) => {
   const mapRef = useRef(null);
@@ -11,11 +10,11 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
   const [selectedAsset, setSelectedAsset] = useState(null);
   const markersRef = useRef([]);
   const infoWindowRef = useRef(null);
-  
+
   useEffect(() => {
     initializeMap();
   }, [assets]);
-  
+
   const initializeMap = () => {
     if (!window.google || !window.google.maps) {
       console.error('Google Maps not loaded');
@@ -23,7 +22,7 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
     }
     
     if (!mapRef.current) return;
-    
+
     const map = new window.google.maps.Map(mapRef.current, {
       zoom: 11,
       center: { lat: 26.1420, lng: -81.7948 }, // Naples, FL
@@ -34,16 +33,16 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
         position: window.google.maps.ControlPosition.TOP_RIGHT
       }
     });
-    
+
     // Create shared info window
     if (!infoWindowRef.current) {
       infoWindowRef.current = new window.google.maps.InfoWindow();
     }
-    
+
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
-    
+
     // Add yard location markers
     yardLocations.forEach(yard => {
       if (yard.coordinates) {
@@ -60,37 +59,37 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
             scale: 10
           }
         });
-        
+
         marker.addListener('click', () => {
           infoWindowRef.current.setContent(`
             <div style="padding: 8px;">
-              <h3 style="margin: 0 0 4px 0; font-weight: bold;">${yard.name}</h3>
-              <p style="margin: 4px 0; font-size: 14px;">${yard.address}</p>
-              <p style="margin: 4px 0; font-size: 14px; color: #10B981;">Yard Location</p>
+              <h3 style="margin: 0 0 4px 0;font-weight: bold;">${yard.name}</h3>
+              <p style="margin: 4px 0;font-size: 14px;">${yard.address}</p>
+              <p style="margin: 4px 0;font-size: 14px;color: #10B981;">Yard Location</p>
             </div>
           `);
           infoWindowRef.current.open(map, marker);
         });
-        
+
         markersRef.current.push(marker);
       }
     });
-    
+
     // Add asset markers
     assets.forEach(asset => {
       if (asset.location?.coordinates) {
         const isYard = asset.location.type === 'yard';
-        
+
         // Determine marker color based on status
         let markerColor;
         switch (asset.status) {
-          case 'available': markerColor = '#10B981'; break; // green
           case 'deployed': markerColor = '#3B82F6'; break; // blue
+          case 'available': markerColor = '#10B981'; break; // green
           case 'maintenance': markerColor = '#EF4444'; break; // red
           case 'in-transit': markerColor = '#F59E0B'; break; // yellow
           default: markerColor = '#6B7280'; break; // gray
         }
-        
+
         const marker = new window.google.maps.Marker({
           position: asset.location.coordinates,
           map: map,
@@ -111,37 +110,34 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
           },
           zIndex: 10
         });
-        
+
         marker.addListener('click', () => {
           setSelectedAsset(asset);
-          
           const infoContent = `
-            <div style="padding: 8px; max-width: 300px;">
-              <h3 style="margin: 0 0 4px 0; font-weight: bold;">${asset.assetNumber}</h3>
-              <p style="margin: 4px 0; font-size: 14px;">${asset.containerSize} ${asset.containerUnit} ${asset.type}</p>
-              <p style="margin: 4px 0; font-size: 14px; color: ${isYard ? '#3B82F6' : '#10B981'};">
+            <div style="padding: 8px;max-width: 300px;">
+              <h3 style="margin: 0 0 4px 0;font-weight: bold;">${asset.assetNumber}</h3>
+              <p style="margin: 4px 0;font-size: 14px;">${asset.containerSize} ${asset.containerUnit} ${asset.type}</p>
+              <p style="margin: 4px 0;font-size: 14px;color: ${isYard ? '#3B82F6' : '#10B981'};">
                 ${isYard ? 'Yard: ' : 'Customer: '} ${asset.location.address}
               </p>
-              <p style="margin: 4px 0; font-size: 12px; color: #6B7280;">
+              <p style="margin: 4px 0;font-size: 12px;color: #6B7280;">
                 Updated: ${asset.location.timestamp.toLocaleDateString()}
               </p>
               <div style="margin-top: 8px;">
-                <a style="color: #3B82F6; cursor: pointer; font-size: 13px;" 
-                   onclick="document.dispatchEvent(new CustomEvent('select-asset', {detail: ${asset.id}}))">
+                <a style="color: #3B82F6;cursor: pointer;font-size: 13px;" onclick="document.dispatchEvent(new CustomEvent('select-asset', {detail: ${asset.id}}))">
                   Select Asset
                 </a>
               </div>
             </div>
           `;
-          
           infoWindowRef.current.setContent(infoContent);
           infoWindowRef.current.open(map, marker);
         });
-        
+
         markersRef.current.push(marker);
       }
     });
-    
+
     // Fit map to show all markers if there are any
     if (markersRef.current.length > 0) {
       const bounds = new window.google.maps.LatLngBounds();
@@ -155,7 +151,7 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
         map.setZoom(15);
       }
     }
-    
+
     // Add custom event listener for info window actions
     document.addEventListener('select-asset', (e) => {
       const asset = assets.find(a => a.id === e.detail);
@@ -163,14 +159,14 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
         onSelectAsset(asset);
       }
     });
-    
+
     setMapLoaded(true);
     
     return () => {
       document.removeEventListener('select-asset', () => {});
     };
   };
-  
+
   // Get asset stats by location type and status
   const getAssetStats = () => {
     return {
@@ -180,9 +176,9 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
       inTransit: assets.filter(a => a.status === 'in-transit').length
     };
   };
-  
+
   const stats = getAssetStats();
-  
+
   return (
     <div className="space-y-4">
       {/* Map Legend */}
@@ -205,10 +201,9 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
             <span className="text-sm">In Transit ({stats.inTransit})</span>
           </div>
         </div>
-        
         <div className="flex items-center space-x-2">
           <button 
-            onClick={initializeMap}
+            onClick={initializeMap} 
             className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded"
           >
             <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
@@ -216,7 +211,7 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
           </button>
         </div>
       </div>
-      
+
       {/* Map Container */}
       <div className="relative">
         <div 
@@ -239,10 +234,7 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
           <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-gray-900">{selectedAsset.assetNumber}</h3>
-              <button 
-                onClick={() => setSelectedAsset(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setSelectedAsset(null)} className="text-gray-400 hover:text-gray-600">
                 <SafeIcon icon={FiX} className="w-4 h-4" />
               </button>
             </div>
@@ -268,7 +260,7 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
             </div>
             
             <div className="flex justify-end space-x-3 mt-3 pt-2 border-t border-gray-100">
-              <button
+              <button 
                 onClick={() => onUpdateLocation(selectedAsset)}
                 className="text-xs text-blue-600 hover:text-blue-700 flex items-center space-x-1"
               >
@@ -276,7 +268,7 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
                 <span>Update Location</span>
               </button>
               
-              <button
+              <button 
                 onClick={() => onSelectAsset(selectedAsset)}
                 className="text-xs text-primary-600 hover:text-primary-700 flex items-center space-x-1"
               >
@@ -292,4 +284,3 @@ const AssetMapView = ({ assets, yardLocations, onSelectAsset, onUpdateLocation }
 };
 
 export default AssetMapView;
-```

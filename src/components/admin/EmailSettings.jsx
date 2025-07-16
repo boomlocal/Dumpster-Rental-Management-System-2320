@@ -14,7 +14,7 @@ const EmailSettings = () => {
     username: '',
     password: '',
     fromEmail: '',
-    fromName: 'BinHaulerPro',
+    fromName: 'BinHauler',
     isConfigured: false
   });
 
@@ -59,22 +59,16 @@ const EmailSettings = () => {
     }
   ];
 
-  const handleProviderSelect = (provider) => {
-    setSmtpSettings(prev => ({
-      ...prev,
-      host: provider.host,
-      port: provider.port,
-      secure: provider.secure
-    }));
-  };
-
   const handleSave = () => {
     if (!smtpSettings.host || !smtpSettings.username || !smtpSettings.password || !smtpSettings.fromEmail) {
       toast.error('Please fill in all required SMTP settings');
       return;
     }
 
-    setSmtpSettings(prev => ({ ...prev, isConfigured: true }));
+    setSmtpSettings(prev => ({
+      ...prev,
+      isConfigured: true
+    }));
     toast.success('SMTP settings saved successfully!');
   };
 
@@ -90,16 +84,12 @@ const EmailSettings = () => {
     }
 
     setTesting(true);
-    
     try {
       // In real app, this would call your backend API
       const response = await fetch('/api/email/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: testEmail,
-          smtpSettings
-        })
+        body: JSON.stringify({ to: testEmail, smtpSettings })
       });
 
       if (response.ok) {
@@ -217,7 +207,7 @@ const EmailSettings = () => {
               value={smtpSettings.fromEmail}
               onChange={(e) => setSmtpSettings(prev => ({ ...prev, fromEmail: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="noreply@binhaulerpro.com"
+              placeholder="noreply@binhauler.com"
             />
           </div>
 
@@ -230,7 +220,7 @@ const EmailSettings = () => {
               value={smtpSettings.fromName}
               onChange={(e) => setSmtpSettings(prev => ({ ...prev, fromName: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="BinHaulerPro"
+              placeholder="BinHauler"
             />
           </div>
         </div>
@@ -278,6 +268,7 @@ const EmailSettings = () => {
               placeholder="test@example.com"
             />
           </div>
+
           <button
             onClick={handleTestEmail}
             disabled={testing || !smtpSettings.isConfigured}

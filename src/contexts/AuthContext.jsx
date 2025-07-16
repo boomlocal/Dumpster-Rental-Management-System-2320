@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -11,147 +12,74 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [viewAsRole, setViewAsRole] = useState(null); // Admin view switcher
-
-  useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('hauler_pro_user');
-      const savedViewAs = localStorage.getItem('hauler_pro_view_as');
-      
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        
-        // Only restore view-as if user is admin
-        if (userData.role === 'admin' && savedViewAs) {
-          setViewAsRole(savedViewAs);
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing saved user:', error);
-      localStorage.removeItem('hauler_pro_user');
-      localStorage.removeItem('hauler_pro_view_as');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [user, setUser] = useState({ role: 'admin', name: 'Admin User', email: 'admin@binhauler.com' });
+  const [loading, setLoading] = useState(false);
+  const [viewAsRole, setViewAsRole] = useState(null);
 
   const login = async (email, password) => {
     try {
-      const mockUsers = {
-        'admin@binhaulerpro.com': {
-          id: 1,
-          email: 'admin@binhaulerpro.com',
-          name: 'John Admin',
-          role: 'admin',
-          phone: '555-0001',
-          company: 'BinHaulerPro Inc.'
-        },
-        'office@binhaulerpro.com': {
-          id: 2,
-          email: 'office@binhaulerpro.com',
-          name: 'Jane Office',
-          role: 'office_staff',
-          phone: '555-0002',
-          company: 'BinHaulerPro Inc.'
-        },
-        'driver@binhaulerpro.com': {
-          id: 3,
-          email: 'driver@binhaulerpro.com',
-          name: 'Mike Driver',
-          role: 'driver',
-          phone: '555-0003',
-          company: 'BinHaulerPro Inc.'
-        },
-        'customer@binhaulerpro.com': {
-          id: 4,
-          email: 'customer@binhaulerpro.com',
-          name: 'Sarah Customer',
-          role: 'customer',
-          phone: '555-0004',
-          company: 'ABC Construction'
-        }
-      };
-
-      if (mockUsers[email] && password === 'password') {
-        const userData = mockUsers[email];
-        setUser(userData);
-        localStorage.setItem('hauler_pro_user', JSON.stringify(userData));
-        
-        return { success: true, user: userData };
+      setLoading(true);
+      // Mock authentication
+      if (email === 'admin@binhauler.com' && password === 'password') {
+        const user = { id: 1, role: 'admin', name: 'Admin User', email: 'admin@binhauler.com' };
+        setUser(user);
+        return { success: true, user };
+      } else if (email === 'driver@binhauler.com' && password === 'password') {
+        const user = { id: 2, role: 'driver', name: 'Driver User', email: 'driver@binhauler.com' };
+        setUser(user);
+        return { success: true, user };
+      } else if (email === 'office@binhauler.com' && password === 'password') {
+        const user = { id: 3, role: 'office_staff', name: 'Office Staff', email: 'office@binhauler.com' };
+        setUser(user);
+        return { success: true, user };
+      } else if (email === 'customer@binhauler.com' && password === 'password') {
+        const user = { id: 4, role: 'customer', name: 'Customer', email: 'customer@binhauler.com' };
+        setUser(user);
+        return { success: true, user };
       }
-
-      return { success: false, error: 'Invalid email or password' };
+      
+      return { success: false, error: 'Invalid credentials' };
     } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: 'Login failed. Please try again.' };
+      toast.error('Login failed. Please try again.');
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = () => {
     setUser(null);
     setViewAsRole(null);
-    localStorage.removeItem('hauler_pro_user');
-    localStorage.removeItem('hauler_pro_view_as');
   };
 
   // Admin view switcher functions
   const switchViewTo = (role) => {
     if (user?.role === 'admin') {
       setViewAsRole(role);
-      localStorage.setItem('hauler_pro_view_as', role);
     }
   };
 
   const resetView = () => {
     setViewAsRole(null);
-    localStorage.removeItem('hauler_pro_view_as');
   };
 
-  // Get effective user role (for permissions and UI)
-  const getEffectiveRole = () => {
-    if (user?.role === 'admin' && viewAsRole) {
-      return viewAsRole;
-    }
-    return user?.role;
-  };
-
-  // Get effective user object (for UI display)
-  const getEffectiveUser = () => {
-    if (user?.role === 'admin' && viewAsRole) {
-      // Return a mock user object for the view-as role
-      const viewAsUsers = {
-        driver: {
-          ...user,
-          name: `${user.name} (as Driver)`,
-          role: 'driver'
-        },
-        office_staff: {
-          ...user,
-          name: `${user.name} (as Office)`,
-          role: 'office_staff'
-        },
-        customer: {
-          ...user,
-          name: `${user.name} (as Customer)`,
-          role: 'customer'
-        }
-      };
-      return viewAsUsers[viewAsRole] || user;
-    }
-    return user;
-  };
+  // Get effective role for permissions
+  const effectiveRole = (user?.role === 'admin' && viewAsRole) ? viewAsRole : user?.role;
+  
+  // Get effective user (for display purposes)
+  const effectiveUser = user ? { 
+    ...user, 
+    role: effectiveRole
+  } : null;
 
   const value = {
     user,
-    effectiveUser: getEffectiveUser(),
-    effectiveRole: getEffectiveRole(),
+    effectiveUser,
+    effectiveRole,
     viewAsRole,
+    loading,
     login,
     logout,
-    loading,
     switchViewTo,
     resetView,
     isAdmin: user?.role === 'admin'
@@ -163,3 +91,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+export default AuthContext;

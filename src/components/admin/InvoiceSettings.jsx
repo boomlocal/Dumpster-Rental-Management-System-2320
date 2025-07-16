@@ -16,24 +16,24 @@ const InvoiceSettings = () => {
     currency: 'USD',
     currencySymbol: '$',
     dueDays: 30,
-    
+
     // Company Information
-    companyName: 'BinHaulerPro Inc.',
+    companyName: 'BinHauler Inc.',
     companyAddress: '123 Business St',
     companyCity: 'Business City',
     companyState: 'CA',
     companyZip: '12345',
     companyPhone: '(555) 123-4567',
-    companyEmail: 'billing@binhaulerpro.com',
-    companyWebsite: 'https://binhaulerpro.com',
+    companyEmail: 'billing@binhauler.com',
+    companyWebsite: 'https://www.binhauler.com',
     taxId: '12-3456789',
-    
+
     // Invoice Template
     logoUrl: '',
     primaryColor: '#0284c7',
     accentColor: '#0ea5e9',
     footerText: 'Thank you for your business!',
-    
+
     // Terms and Notes
     paymentTerms: 'Payment is due within 30 days of invoice date.',
     defaultNotes: 'Please include invoice number on payment.',
@@ -54,7 +54,10 @@ const InvoiceSettings = () => {
   };
 
   const handleChange = (field, value) => {
-    setInvoiceSettings(prev => ({ ...prev, [field]: value }));
+    setInvoiceSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const generatePreviewNumber = () => {
