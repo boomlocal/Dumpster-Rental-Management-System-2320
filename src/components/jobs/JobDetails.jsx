@@ -6,7 +6,7 @@ import SafeIcon from '../../common/SafeIcon';
 import PhotoLibraryView from '../photos/PhotoLibraryView';
 import toast from 'react-hot-toast';
 
-const { FiMapPin, FiUser, FiTruck, FiClock, FiCheckCircle, FiCamera, FiFileText } = FiIcons;
+const { FiMapPin, FiUser, FiTruck, FiClock, FiCheckCircle, FiCamera, FiFileText, FiImage } = FiIcons;
 
 const JobDetails = ({ job, onClose, onUpdate }) => {
   const { customers, photos } = useData();
@@ -14,7 +14,7 @@ const JobDetails = ({ job, onClose, onUpdate }) => {
   const [notes, setNotes] = useState(job?.notes || '');
   
   const customer = customers.find(c => c.id === job.customerId);
-
+  
   const handleUpdateStatus = (status) => {
     if (onUpdate) {
       onUpdate(job.id, { status });
@@ -31,6 +31,12 @@ const JobDetails = ({ job, onClose, onUpdate }) => {
     // Implementation would depend on your data context
     toast.success('Photo notes updated');
   };
+  
+  // Combine job photos with photos from the photos context
+  const jobPhotos = [
+    ...(job.photos || []),
+    ...photos.filter(p => p.jobId === job.id)
+  ];
 
   return (
     <div className="space-y-6">
@@ -86,21 +92,43 @@ const JobDetails = ({ job, onClose, onUpdate }) => {
         )}
       </div>
       
+      {/* Job Photos */}
+      {jobPhotos.length > 0 && (
+        <div className="border-t pt-4">
+          <h4 className="font-medium text-gray-900 mb-2">Job Photos ({jobPhotos.length})</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {jobPhotos.slice(0, 4).map((photo, index) => (
+              <div 
+                key={photo.id || index} 
+                className="cursor-pointer"
+                onClick={() => setShowPhotoLibrary(true)}
+              >
+                <img 
+                  src={photo.url} 
+                  alt={`Job photo ${index + 1}`} 
+                  className="w-full h-24 object-cover rounded-lg border border-gray-200" 
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
       {/* View Photos Button */}
       <button 
         onClick={() => setShowPhotoLibrary(true)} 
         className="flex items-center space-x-2 px-4 py-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg"
       >
-        <SafeIcon icon={FiCamera} className="w-4 h-4" />
-        <span>View Photos</span>
+        <SafeIcon icon={jobPhotos.length > 0 ? FiCamera : FiImage} className="w-4 h-4" />
+        <span>{jobPhotos.length > 0 ? 'View All Photos' : 'Add Photos'}</span>
       </button>
       
       {/* Status Update Buttons */}
       {onUpdate && (
         <div className="flex justify-end space-x-3 pt-4 border-t">
           {job.status !== 'completed' && (
-            <button
-              onClick={() => handleUpdateStatus('completed')}
+            <button 
+              onClick={() => handleUpdateStatus('completed')} 
               className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 flex items-center space-x-2"
             >
               <SafeIcon icon={FiCheckCircle} className="w-4 h-4" />
@@ -112,13 +140,13 @@ const JobDetails = ({ job, onClose, onUpdate }) => {
       
       {/* Photo Library Modal */}
       {showPhotoLibrary && (
-        <PhotoLibraryView
-          photos={photos.filter(p => p.jobId === job.id)}
-          title={`Photos for Job #${job.id}`}
-          onClose={() => setShowPhotoLibrary(false)}
-          onDeletePhoto={handleDeletePhoto}
-          onUpdateNotes={handleUpdatePhotoNotes}
-          canDownload={true}
+        <PhotoLibraryView 
+          photos={jobPhotos} 
+          title={`Photos for Job #${job.id}`} 
+          onClose={() => setShowPhotoLibrary(false)} 
+          onDeletePhoto={handleDeletePhoto} 
+          onUpdateNotes={handleUpdatePhotoNotes} 
+          canDownload={true} 
         />
       )}
     </div>

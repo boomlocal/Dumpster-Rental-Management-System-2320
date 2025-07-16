@@ -58,7 +58,16 @@ export const DataProvider = ({ children }) => {
       address: '123 Main St, New York, NY 10001',
       coordinates: { lat: 40.7128, lng: -74.0060 },
       notes: 'Place dumpster in driveway',
-      createdAt: new Date('2024-01-10')
+      createdAt: new Date('2024-01-10'),
+      photos: [
+        {
+          id: 'photo1',
+          url: 'https://images.unsplash.com/photo-1610041321420-a0b7d47d396c',
+          name: 'Site photo 1.jpg',
+          type: 'image/jpeg',
+          timestamp: new Date('2024-01-15')
+        }
+      ]
     },
     {
       id: 1002,
@@ -71,7 +80,16 @@ export const DataProvider = ({ children }) => {
       address: '456 Oak Ave, Los Angeles, CA 90001',
       coordinates: { lat: 34.0522, lng: -118.2437 },
       notes: 'Customer prefers rear placement',
-      createdAt: new Date('2024-01-15')
+      createdAt: new Date('2024-01-15'),
+      photos: [
+        {
+          id: 'photo2',
+          url: 'https://images.unsplash.com/photo-1526951521990-620dc14c214b',
+          name: 'Dumpster placement.jpg',
+          type: 'image/jpeg',
+          timestamp: new Date('2024-01-20')
+        }
+      ]
     },
     {
       id: 1003,
@@ -84,7 +102,8 @@ export const DataProvider = ({ children }) => {
       address: '789 Pine Rd, Chicago, IL 60601',
       coordinates: { lat: 41.8781, lng: -87.6298 },
       notes: 'Concrete disposal, heavy materials',
-      createdAt: new Date('2024-01-20')
+      createdAt: new Date('2024-01-20'),
+      photos: []
     }
   ]);
 
@@ -172,7 +191,11 @@ export const DataProvider = ({ children }) => {
 
   // Customer operations
   const addCustomer = (customerData) => {
-    const newCustomer = { ...customerData, id: Date.now(), createdAt: new Date() };
+    const newCustomer = {
+      ...customerData,
+      id: Date.now(),
+      createdAt: new Date()
+    };
     setCustomers(prev => [...prev, newCustomer]);
     return newCustomer;
   };
@@ -191,7 +214,11 @@ export const DataProvider = ({ children }) => {
 
   // Job operations
   const addJob = (jobData) => {
-    const newJob = { ...jobData, id: Date.now(), createdAt: new Date() };
+    const newJob = {
+      ...jobData,
+      id: Date.now(),
+      createdAt: new Date()
+    };
     setJobs(prev => [...prev, newJob]);
     return newJob;
   };
@@ -210,7 +237,10 @@ export const DataProvider = ({ children }) => {
 
   // Dumpster operations
   const addDumpster = (dumpsterData) => {
-    const newDumpster = { ...dumpsterData, id: Date.now() };
+    const newDumpster = {
+      ...dumpsterData,
+      id: Date.now()
+    };
     setDumpsters(prev => [...prev, newDumpster]);
     return newDumpster;
   };
@@ -229,7 +259,10 @@ export const DataProvider = ({ children }) => {
 
   // Photo operations
   const addPhoto = (photoData) => {
-    const newPhoto = { ...photoData, id: photoData.id || Date.now() };
+    const newPhoto = {
+      ...photoData,
+      id: photoData.id || Date.now()
+    };
     setPhotos(prev => [...prev, newPhoto]);
     return newPhoto;
   };

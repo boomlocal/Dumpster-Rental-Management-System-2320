@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import { useData } from '../../contexts/DataContext';
 import toast from 'react-hot-toast';
 
-const { FiX, FiSave, FiUser, FiMapPin, FiCalendar, FiPackage, FiFileText, FiPlus } = FiIcons;
+const { FiX, FiSave, FiUser, FiMapPin, FiCalendar, FiPackage, FiFileText, FiPlus, FiCamera, FiImage, FiTrash2 } = FiIcons;
 
 const JobForm = ({ job, onClose, onSave }) => {
   const { customers } = useData();
   const today = new Date().toISOString().split('T')[0];
-
+  const fileInputRef = useRef(null);
+  
   const [formData, setFormData] = useState({
     customerId: job?.customerId || '',
     dumpsterSize: job?.dumpsterSize || '20 Yard',
@@ -19,11 +20,13 @@ const JobForm = ({ job, onClose, onSave }) => {
     scheduledTime: job?.scheduledTime || 'morning',
     status: job?.status || 'scheduled',
     address: job?.address || '',
-    notes: job?.notes || ''
+    notes: job?.notes || '',
+    photos: job?.photos || []
   });
-
+  
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isDragging, setIsDragging] = useState(false);
 
   // If job has a customer, set the selected customer
   useEffect(() => {
@@ -35,28 +38,19 @@ const JobForm = ({ job, onClose, onSave }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-
+    setFormData({ ...formData, [name]: value });
+    
     // Clear errors when field is updated
     if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
+      setErrors({ ...errors, [name]: '' });
     }
-
+    
     // Update address when customer changes
     if (name === 'customerId' && value) {
       const customer = customers.find(c => c.id === parseInt(value));
       if (customer) {
         setSelectedCustomer(customer);
-        setFormData(prev => ({
-          ...prev,
-          address: customer.address || ''
-        }));
+        setFormData(prev => ({ ...prev, address: customer.address || '' }));
       }
     }
   };
@@ -113,23 +107,103 @@ const JobForm = ({ job, onClose, onSave }) => {
     }
   };
 
+  // Photo upload handling
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files);
+    handlePhotoFiles(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    handlePhotoFiles(files);
+  };
+
+  const handlePhotoFiles = (files) => {
+    // Limit to max 4 photos total
+    if (formData.photos.length + files.length > 4) {
+      toast.error(`You can only upload a maximum of 4 photos`);
+      return;
+    }
+
+    const validFiles = files.filter(file => {
+      const isImage = file.type.startsWith('image/');
+      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB limit
+      
+      if (!isImage) {
+        toast.error(`${file.name} is not a valid image file`);
+        return false;
+      }
+      
+      if (!isValidSize) {
+        toast.error(`${file.name} is too large (max 5MB)`);
+        return false;
+      }
+      
+      return true;
+    });
+
+    // Process each valid file
+    Promise.all(validFiles.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve({
+            id: Date.now() + Math.random(),
+            url: e.target.result,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            timestamp: new Date()
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    })).then(newPhotos => {
+      setFormData(prev => ({
+        ...prev,
+        photos: [...prev.photos, ...newPhotos]
+      }));
+      toast.success(`${newPhotos.length} photo(s) uploaded`);
+    });
+  };
+
+  const removePhoto = (photoId) => {
+    setFormData(prev => ({
+      ...prev,
+      photos: prev.photos.filter(photo => photo.id !== photoId)
+    }));
+    toast.success('Photo removed');
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
     >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+      <motion.div 
+        initial={{ scale: 0.95, opacity: 0 }} 
+        animate={{ scale: 1, opacity: 1 }} 
         className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">
             {job ? 'Edit Job' : 'Schedule New Job'}
           </h2>
-          <button
-            onClick={onClose}
+          <button 
+            onClick={onClose} 
             className="text-gray-400 hover:text-gray-600 p-2"
           >
             <SafeIcon icon={FiX} className="w-6 h-6" />
@@ -148,9 +222,7 @@ const JobForm = ({ job, onClose, onSave }) => {
                 name="customerId"
                 value={formData.customerId}
                 onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  errors.customerId ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.customerId ? 'border-red-500' : 'border-gray-300'}`}
               >
                 <option value="">Select Customer</option>
                 {customers.map(customer => (
@@ -183,7 +255,7 @@ const JobForm = ({ job, onClose, onSave }) => {
                 <option value="40 Yard">40 Yard</option>
               </select>
             </div>
-
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Service Type *
@@ -200,7 +272,7 @@ const JobForm = ({ job, onClose, onSave }) => {
                 <option value="live-load">Live Load (Wait and Load)</option>
               </select>
             </div>
-
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Scheduled Date *
@@ -213,14 +285,12 @@ const JobForm = ({ job, onClose, onSave }) => {
                   value={formData.scheduledDate}
                   onChange={handleChange}
                   min={today}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    errors.scheduledDate ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.scheduledDate ? 'border-red-500' : 'border-gray-300'}`}
                 />
               </div>
               {errors.scheduledDate && <p className="text-red-500 text-sm mt-1">{errors.scheduledDate}</p>}
             </div>
-
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Scheduled Time
@@ -236,7 +306,7 @@ const JobForm = ({ job, onClose, onSave }) => {
                 <option value="anytime">Anytime</option>
               </select>
             </div>
-
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
@@ -267,9 +337,7 @@ const JobForm = ({ job, onClose, onSave }) => {
                 value={formData.address}
                 onChange={handleChange}
                 rows={3}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  errors.address ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Full delivery address"
               />
             </div>
@@ -305,6 +373,73 @@ const JobForm = ({ job, onClose, onSave }) => {
                 placeholder="Special instructions, placement details, etc."
               />
             </div>
+          </div>
+
+          {/* Photo Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Photos (Max 4)
+            </label>
+            <div 
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-gray-400'}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <SafeIcon icon={FiImage} className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-2">
+                Drag and drop images here, or click to select
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                Supports: JPEG, PNG, GIF (max 5MB each)
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={formData.photos.length >= 4}
+                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Select Files
+              </button>
+            </div>
+
+            {/* Photo Preview */}
+            {formData.photos.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                  Uploaded Photos ({formData.photos.length}/4)
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {formData.photos.map(photo => (
+                    <div key={photo.id} className="relative group">
+                      <img 
+                        src={photo.url} 
+                        alt="Job site" 
+                        className="w-full h-24 object-cover rounded-lg border border-gray-200" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(photo.id)}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <SafeIcon icon={FiTrash2} className="w-4 h-4" />
+                      </button>
+                      <div className="absolute bottom-1 left-1 right-1 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
+                        {photo.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Form Actions */}
